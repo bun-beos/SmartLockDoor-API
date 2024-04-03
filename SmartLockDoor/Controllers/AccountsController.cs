@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace SmartLockDoor.Controllers
 {
@@ -16,12 +18,18 @@ namespace SmartLockDoor.Controllers
         private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAccountService _accountService;
+        private readonly IEmailService _emailService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public AccountsController(IConfiguration configuration, IUserService userService, IUnitOfWork unitOfWork)
+        public AccountsController(IConfiguration configuration, IUserService userService, IUnitOfWork unitOfWork, IAccountService accountService, ICloudinaryService cloudinaryService, IEmailService emailService)
         {
             _configuration = configuration;
             _userService = userService;
             _unitOfWork = unitOfWork;
+            _accountService = accountService;
+            _emailService = emailService;
+            _cloudinaryService = cloudinaryService;
         }
 
         /// <summary>
@@ -43,7 +51,7 @@ namespace SmartLockDoor.Controllers
         /// Đăng ký tài khoản
         /// </summary>
         /// <param name="accountEntityDto">Email và mật khẩu</param>
-        /// <returns>1-Thành công, 0-Thất bại</returns>
+        /// <returns>Mã xác thực tài khoản</returns>
         [HttpPost]
         [Route("Registration")]
         public async Task<int> RegisterAsync(AccountEntityDto accountEntityDto)
@@ -53,56 +61,71 @@ namespace SmartLockDoor.Controllers
                 accountEntityDto.Username = accountEntityDto.Email.Split("@")[0];
             }
 
-            var paramEmail = new
-            {
-                email = accountEntityDto.Email,
-            };
-
-            var sql = $"SELECT * FROM account WHERE Email = @email";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sql, paramEmail);
+            var accountEntity = await _accountService.GetAccountAsync("Email", accountEntityDto.Email);
 
             if (accountEntity == null)
             {
-                CreatePasswordHash(accountEntityDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
-                var newVerifyToken = CreateRegistrationVerifyToken();
-                var paramAccount = new
+                var verifyToken = await _accountService.RegisterAsync(accountEntityDto);
+
+                verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
+
+                var verifyUrl = $"https://localhost:7106/api/v1/Accounts/VerifyAccount?token={verifyToken}";
+
+                var emailDto = new EmailDto
                 {
-                    accountId = Guid.NewGuid(),
-                    email = accountEntityDto.Email,
-                    passwordHash,
-                    passwordSalt,
-                    username = accountEntityDto.Username,
-                    verifyToken = newVerifyToken.Token,
-                    verifyTokenExpires = newVerifyToken.Expires,
+                    To = "trantrungkien532@gmail.com",
+                    Subject = "Xác thực tài khoản",
+                    Body = _emailService.GetVerifyBodyEmail(verifyUrl)
                 };
 
-                var sqlNewAcc = @"INSERT INTO account (AccountId, Email, PasswordHash, PasswordSalt, Username, VerifyToken, VerifyTokenExpires) VALUES (@accountId, @email, @passwordHash, @passwordSalt, @username, @verifyToken, @verifyTokenExpires)";
+                _emailService.SendEmail(emailDto);
 
-                var result = await _unitOfWork.Connection.ExecuteAsync(sqlNewAcc, paramAccount);
-
-                return result;
+                return 1;
             }
 
             if (accountEntity.VerifiedDate == null)
             {
-                var newVerifyToken = CreateRegistrationVerifyToken();
+                var verifyToken = await _accountService.UpdateRegisterAsync(accountEntityDto);
 
-                var paramAccount = new
+                verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
+
+                var verifyUrl = $"https://localhost:7106/api/v1/Accounts/VerifyAccount?token={verifyToken}";
+
+                var emailDto = new EmailDto
                 {
-                    email = accountEntityDto.Email,
-                    verifyToken = newVerifyToken.Token,
-                    verifyTokenExpires = newVerifyToken.Expires,
+                    To = "trantrungkien532@gmail.com",
+                    Subject = "Xác thực tài khoản",
+                    Body = _emailService.GetVerifyBodyEmail(verifyUrl)
                 };
 
-                var sqlUpdateAcc = @"UPDATE account SET VerifyToken = @verifyToken, VerifyTokenExpires = @verifyTokenExpires WHERE Email = @email";
+                _emailService.SendEmail(emailDto);
 
-                var result = await _unitOfWork.Connection.ExecuteAsync(sqlUpdateAcc, paramAccount);
+                return 1;
+            }
+            else throw new ConflictException($"Email '{accountEntityDto.Email}' đã tồn tại.", "Email đã đăng ký tài khoản.");
+        }
 
-                return result;
+        /// <summary>
+        /// Xác thực tài khoản
+        /// </summary>
+        [HttpGet]
+        [Route("VerifyAccount")]
+        public async Task<ActionResult<string>> VerifyAccountAsync(string token)
+        {
+            var accountEntity = await _accountService.GetAccountAsync("VerifyToken", token);
+
+            if (accountEntity == null || accountEntity.VerifyTokenExpires < DateTime.Now)
+            {
+                return BadRequest("Mã xác thực không hợp lệ");
             }
 
-            return 0;
+            var result = await _accountService.UpdateVerifiedAsync(accountEntity.Email);
+
+            if (result == 1)
+            {
+                return Ok();
+            }
+            else throw new Exception("Cập nhập dữ liệu thất bại.");
         }
 
         /// <summary>
@@ -112,50 +135,97 @@ namespace SmartLockDoor.Controllers
         /// <returns>Access token</returns>
         [HttpPost]
         [Route("Login")]
-        public async Task<ActionResult<string>> LoginAsync(AccountEntityDto accountEntityDto)
+        public async Task<ActionResult<Token>> LoginAsync(AccountEntityDto accountEntityDto)
         {
-            var param = new
-            {
-                email = accountEntityDto.Email,
-            };
-
-            var sql = $"SELECT * FROM account WHERE Email = @email";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sql, param);
+            var accountEntity = await _accountService.GetAccountAsync("Email", accountEntityDto.Email);
 
             if (accountEntity == null)
             {
-                return BadRequest("Email chưa đăng ký tài khoản");
+                return BadRequest("Email chưa đăng ký tài khoản.");
             }
 
             if (accountEntity.VerifiedDate == null)
             {
-                return BadRequest("Tài khoản chưa được xác thực");
+                return BadRequest("Email chưa được xác thực.");
             }
 
-            if (!VerifyPasswordHash(accountEntityDto.Password, accountEntity.PasswordHash, accountEntity.PasswordSalt))
+            if (!_accountService.VerifyPasswordHash(accountEntityDto.Password, accountEntity.PasswordHash, accountEntity.PasswordSalt))
             {
-                return BadRequest("Mật khẩu không đúng");
+                return BadRequest("Mật khẩu không đúng.");
             }
 
-            string token = CreateAccessToken(accountEntity, "User");
+            var accessToken = _accountService.CreateAccessToken(accountEntityDto.Email, "User");
 
-            var newRefreshToken = CreateRefreshToken();
-            SetRefreshToken(newRefreshToken);
+            var newRefreshToken = _accountService.CreateRefreshToken();
 
-            var param1 = new
+            var token = new Token
             {
-                email = accountEntity.Email,
-                token = newRefreshToken.Token,
-                created = newRefreshToken.Created,
-                expries = newRefreshToken.Expires,
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken.Token
             };
 
-            var sql1 = @"UPDATE account SET RefreshToken = @token, RefreshTokenCreated = @created, RefreshTokenExpires = @expries WHERE Email = @email";
+            var result = await _accountService.UpdateTokenAsync(accountEntityDto.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
 
-            await _unitOfWork.Connection.ExecuteAsync(sql1, param1);
+            if (result == 1)
+            {
+                return Ok(token);
+            }
+            else throw new Exception("Cập nhập RefreshToken thất bại.");
+        }
 
-            return Ok(token);
+        /// <summary>
+        /// Lấy mã xác thực đặt lại mật khẩu
+        /// </summary>
+        [HttpPost]
+        [Route("ForgotPassword")]
+        public async Task<IActionResult> ForgotPasswordAsync(string email)
+        {
+            var accountEntity = await _accountService.GetAccountAsync("Email", email);
+
+            if (accountEntity == null)
+            {
+                return BadRequest("Email chưa đăng ký");
+            }
+
+            if (accountEntity.VerifiedDate == null)
+            {
+                return BadRequest("Email chưa được xác thực");
+            }
+
+            var resetPasswordToken = _accountService.CreatePasswordResetToken();
+
+            var result = await _accountService.UpdateTokenAsync(email, resetPasswordToken.Token, resetPasswordToken.Expires, "PasswordToken");
+
+            if (result == 1)
+            {
+                return Ok();
+            }
+            else throw new Exception("Cập nhập PasswordToken thất bại.");
+        }
+
+        /// <summary>
+        /// Đặt lại mật khẩu
+        /// </summary>
+        [HttpPost]
+        [Route("ResetPassword")]
+        public async Task<IActionResult> ResetPasswordAsync(PasswordReset passwordReset)
+        {
+            var accountEntity = await _accountService.GetAccountAsync("PasswordToken", passwordReset.PasswordToken);
+
+            if (accountEntity == null || accountEntity.PasswordTokenExpires < DateTime.Now)
+            {
+                return BadRequest("Mã xác thực không hợp lệ");
+            }
+
+            _accountService.CreatePasswordHash(passwordReset.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
+
+            var result = await _accountService.UpdatePasswordAsync(accountEntity.Email, passwordHash, passwordSalt);
+
+            if (result == 1)
+            {
+                return Ok();
+            }
+            else throw new Exception("Cập nhập mật khẩu thất bại.");
         }
 
         /// <summary>
@@ -164,17 +234,28 @@ namespace SmartLockDoor.Controllers
         [HttpPut]
         [Route("Username")]
         [Authorize(Roles = "User")]
-        public async Task<int> UpdateUsernameAsync(string? newUsername)
+        public async Task<int> UpdateUsernameAsync(string username)
         {
-            var param = new
-            {
-                email = _userService.GetMyEmail(),
-                newUsername,
-            };
+            var email = _userService.GetMyEmail();
 
-            var sql = @"UPDATE account SET Username = @newUsername WHERE Email = @email";
+            var result = await _accountService.UpdateUserInfoAsync(email, username, null);
 
-            var result = await _unitOfWork.Connection.ExecuteAsync(sql, param);
+            return result;
+        }
+
+        /// <summary>
+        /// Đổi ảnh người dùng
+        /// </summary>
+        [HttpPut]
+        [Route("UserImage")]
+        [Authorize(Roles = "User")]
+        public async Task<int> UpdateUserImageAsync([FromBody] string imageBase64Data)
+        {
+            var email = _userService.GetMyEmail();
+
+            var imageUri = _cloudinaryService.UploadImage(imageBase64Data);
+
+            var result = await _accountService.UpdateUserInfoAsync(email, null, imageUri);
 
             return result;
         }
@@ -185,41 +266,26 @@ namespace SmartLockDoor.Controllers
         [HttpPut]
         [Route("Password")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<string>> UpdatePasswordAsync([FromBody] PasswordChange passwordChange)
+        public async Task<int> UpdatePasswordAsync([FromBody] PasswordChange passwordChange)
         {
-            var paramEmail = new
+            var email = _userService.GetMyEmail();
+
+            var accountEntity = await _accountService.GetAccountAsync("Email", email);
+
+            if (accountEntity != null && !_accountService.VerifyPasswordHash(passwordChange.CurrentPassword, accountEntity.PasswordHash, accountEntity.PasswordSalt))
             {
-                email = _userService.GetMyEmail()
-            };
-
-            var sqlAcc = $"SELECT * FROM account WHERE Email = @email";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sqlAcc, paramEmail);
-
-            if (accountEntity != null && !VerifyPasswordHash(passwordChange.CurrentPassword, accountEntity.PasswordHash, accountEntity.PasswordSalt))
-            {
-                return BadRequest("Mật khẩu hiện tại không đúng");
+                throw new BadHttpRequestException("Mật khẩu hiện tại không đúng.");
             }
 
-            CreatePasswordHash(passwordChange.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
+            _accountService.CreatePasswordHash(passwordChange.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
 
-            var paramPassword = new
+            var result = await _accountService.UpdatePasswordAsync(email, passwordHash, passwordSalt);
+
+            if (result == 1)
             {
-                passwordHash,
-                passwordSalt,
-            };
-
-            var sqlPassword = $"UPDATE account SET PasswordHash = @passwordHash, PasswordSalt = @passwordSalt WHERE Email = '{paramEmail.email}'";
-
-            try
-            {
-                await _unitOfWork.Connection.ExecuteAsync(sqlPassword, paramPassword);
-                return Ok();
+                return result;
             }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            else throw new Exception("Cập nhập mật khẩu thất bại.");
         }
 
         /// <summary>
@@ -227,255 +293,41 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("NewAccessToken")]
-        [Authorize(Roles = "User")]
-        public async Task<ActionResult<string>> GetNewAccessTokenAsync()
+        public async Task<ActionResult<Token>> GetNewAccessTokenAsync(string refreshToken)
         {
-            var refreshToken = Request.Cookies["refreshToken"];
-
-            var sql = $"SELECT * FROM account WHERE RefreshToken = '{refreshToken}'";
-
-            var account = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sql);
-
-            if (account == null || account.Email != _userService.GetMyEmail())
-            {
-                return Unauthorized("Refresh token không hợp lệ");
-            }
-            else if (account.RefreshTokenExpires < DateTime.Now)
-            {
-                return Unauthorized("Refresh token đã hết hiệu lực");
-            }
-
-            string token = CreateAccessToken(account, "User");
-
-            return Ok(token);
-        }
-
-        /// <summary>
-        /// Xác thực tài khoản
-        /// </summary>
-        [HttpPost]
-        [Route("VerifyAccount")]
-        public async Task<ActionResult<string>> VerifyAccountAsync(string token)
-        {
-            var paramToken = new
-            {
-                verifyToken = token
-            };
-
-            var sqlAcc = $"SELECT * FROM account WHERE VerifyToken = @verifyToken";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sqlAcc, paramToken);
-
-            if (accountEntity == null || accountEntity.VerifyTokenExpires < DateTime.Now)
-            {
-                return BadRequest("Mã xác thực không hợp lệ");
-            }
-
-            var paramAcc = new
-            {
-                verifiedDate = DateTime.Now,
-            };
-
-            var sqlUpdate = $"UPDATE account SET VerifiedDate = @verifiedDate WHERE VerifyToken = '{paramToken.verifyToken}'";
-
-            try
-            {
-                await _unitOfWork.Connection.ExecuteAsync(sqlUpdate, paramAcc);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Lấy mã xác thực đặt lại mật khẩu
-        /// </summary>
-        [HttpPost]
-        [Route("ForgotPassword")]
-        public async Task<IActionResult> ForgotPasswordAsync(string email)
-        {
-            var paramEmail = new
-            {
-                email
-            };
-
-            var sql = $"SELECT * FROM account WHERE Email = @email";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sql, paramEmail);
+            var accountEntity = await _accountService.GetAccountAsync("RefreshToken", refreshToken);
 
             if (accountEntity == null)
             {
-                return BadRequest("Email chưa đăng ký");
+                return Unauthorized("Refresh token không hợp lệ.");
             }
 
-            var resetPasswordToken = CreatePasswordResetToken();
-
-            var paramToken = new
+            if (accountEntity.RefreshTokenExpires < DateTime.Now)
             {
-                passwordToken = resetPasswordToken.Token,
-                passwordTokenExpires = resetPasswordToken.Expires,
-            };
-
-            var sqlUpdate = $"UPDATE account SET passwordToken = @passwordToken, passwordTokenExpires = @passwordTokenExpires WHERE Email = '{paramEmail.email}'";
-
-            try
-            {
-                await _unitOfWork.Connection.ExecuteAsync(sqlUpdate, paramToken);
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Đặt lại mật khẩu
-        /// </summary>
-        [HttpPost]
-        [Route("ResetPassword")]
-        public async Task<IActionResult> ResetPasswordAsync(PasswordReset passwordReset)
-        {
-            var paramToken = new
-            {
-                passwordToken = passwordReset.PasswordToken,
-            };
-
-            var sqlAcc = $"SELECT * FROM account WHERE PasswordToken = @passwordToken";
-
-            var accountEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<AccountEntity>(sqlAcc, paramToken);
-
-            if (accountEntity == null || accountEntity.PasswordTokenExpires < DateTime.Now)
-            {
-                return BadRequest("Mã xác thực không hợp lệ");
+                return Unauthorized("Refresh token đã hết hiệu lực.");
             }
 
-            CreatePasswordHash(passwordReset.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
+            string accessToken = _accountService.CreateAccessToken(accountEntity.Email, "User");
+            var newRefreshToken = _accountService.CreateRefreshToken();
 
-            var paramPassword = new
+            var token = new Token
             {
-                passwordHash,
-                passwordSalt,
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken.Token
             };
 
-            var sqlPassword = $"UPDATE account SET PasswordHash = @passwordHash, PasswordSalt = @passwordSalt WHERE Email = '{accountEntity.Email}'";
-
-            try
+            if (accountEntity.RefreshTokenExpires != null)
             {
-                await _unitOfWork.Connection.ExecuteAsync(sqlPassword, paramPassword);
-                return Ok();
+                newRefreshToken.Expires = accountEntity.RefreshTokenExpires.Value.DateTime;
             }
-            catch (Exception ex)
+
+            var result = await _accountService.UpdateTokenAsync(accountEntity.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
+
+            if (result == 1)
             {
-                throw new Exception(ex.Message);
+                return Ok(token);
             }
-        }
-
-
-        /// <summary>
-        /// Băm mật khẩu
-        /// </summary>
-        private void CreatePasswordHash(string password, out byte[] paswordHash, out byte[] passwordSalt)
-        {
-            var hmac = new HMACSHA512();
-
-            passwordSalt = hmac.Key;
-            paswordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-        }
-
-        /// <summary>
-        /// Xác thực mật khẩu
-        /// </summary>
-        private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
-        {
-            var hmac = new HMACSHA512(passwordSalt);
-
-            var computeHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-
-            return computeHash.SequenceEqual(passwordHash);
-        }
-
-        /// <summary>
-        /// Tạo mã xác thực email
-        /// </summary>
-        private VerifyToken CreateRegistrationVerifyToken()
-        {
-            var verifyToken = new VerifyToken
-            {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
-                Expires = DateTime.Now.AddMinutes(10),
-            };
-
-            return verifyToken;
-        }
-
-        /// <summary>
-        /// Tạo access token
-        /// </summary>
-        private string CreateAccessToken(AccountEntity accountEntity, string roleValue)
-        {
-            List<Claim> claims = new()
-            {
-                new Claim(ClaimTypes.Email, accountEntity.Email),
-                new Claim(ClaimTypes.Role, roleValue),
-            };
-
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
-
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: cred);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
-        }
-
-        /// <summary>
-        /// Tạo refresh token
-        /// </summary>
-        private RefreshToken CreateRefreshToken()
-        {
-            var refreshToken = new RefreshToken
-            {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                Created = DateTime.Now,
-                Expires = DateTime.Now.AddDays(7),
-            };
-
-            return refreshToken;
-        }
-
-        /// <summary>
-        /// Set refresh token
-        /// </summary>
-        private void SetRefreshToken(RefreshToken newRefreshToken)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = newRefreshToken.Expires,
-            };
-            Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieOptions);
-        }
-
-        /// <summary>
-        /// Tạo mã xác thực quên mật khẩu
-        /// </summary>
-        private VerifyToken CreatePasswordResetToken()
-        {
-            var verifyToken = new VerifyToken
-            {
-                Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(4)),
-                Expires = DateTime.Now.AddMinutes(10),
-            };
-
-            return verifyToken;
+            else throw new Exception("Cập nhập RefreshToken thất bại.");
         }
     }
 }

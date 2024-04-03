@@ -82,12 +82,12 @@ namespace SmartLockDoor.Controllers
             }
         }
 
-        [HttpPut]
-        [Route("{memberId")]
+        //[HttpPut]
+        //[Route("{memberId")]
         //[Authorize(Roles = "User")]
-        public async Task<IActionResult> UpdateMemberAsync(MemberEntityDto memberEntityDto)
-        {
+        //public async Task<IActionResult> UpdateMemberAsync(MemberEntityDto memberEntityDto)
+        //{
 
-        }
+        //}
     }
 }

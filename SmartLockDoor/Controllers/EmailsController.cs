@@ -18,7 +18,6 @@ namespace SmartLockDoor.Controllers
         {
             try
             {
-
                 _emailService.SendEmail(emailDto);
                 return Ok();
             }

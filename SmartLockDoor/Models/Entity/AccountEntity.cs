@@ -11,6 +11,8 @@ namespace SmartLockDoor
 
         public string Username { get; set; } = string.Empty;
 
+        public string UserImage { get; set; } = string.Empty;
+
         public byte[] PasswordHash { get; set; } = Array.Empty<byte>();
 
         public byte[] PasswordSalt { get; set; } = Array.Empty<byte>();
@@ -22,8 +24,6 @@ namespace SmartLockDoor
         public DateTimeOffset? VerifiedDate { get; set; }
 
         public string? RefreshToken { get; set; }
-
-        public DateTimeOffset? RefreshTokenCreated { get; set; }
 
         public DateTimeOffset? RefreshTokenExpires { get; set; }
 

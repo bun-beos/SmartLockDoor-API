@@ -54,7 +54,8 @@ namespace SmartLockDoor
             try
             {
                 var uploadResult = _cloudinary.Upload(uploadParams);
-                return uploadResult.SecureUri.AbsoluteUri;
+                
+                return uploadResult!.SecureUri.AbsoluteUri;
             }
             catch
             {
@@ -62,14 +63,14 @@ namespace SmartLockDoor
             }
         }
 
-        private string GetPublicIdFromUrl(string imageUrl)
+        private string GetPublicIdFromUrl(string imageUri)
         {
-            var publicIdIndex = imageUrl.LastIndexOf("/") + 1;
-            var extensionIndex = imageUrl.LastIndexOf(".");
+            var publicIdIndex = imageUri.LastIndexOf("/") + 1;
+            var extensionIndex = imageUri.LastIndexOf(".");
 
             if (publicIdIndex >= 0 && extensionIndex > publicIdIndex)
             {
-                return imageUrl.Substring(publicIdIndex, extensionIndex - publicIdIndex);
+                return imageUri.Substring(publicIdIndex, extensionIndex - publicIdIndex);
             }
             else
                 return string.Empty;

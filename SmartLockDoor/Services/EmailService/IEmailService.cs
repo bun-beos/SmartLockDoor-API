@@ -2,6 +2,8 @@
 {
     public interface IEmailService
     {
-        void SendEmail(EmailDto emailDto); 
+        void SendEmail(EmailDto emailDto);
+
+        string GetVerifyBodyEmail(string verifyUrl);
     }
 }

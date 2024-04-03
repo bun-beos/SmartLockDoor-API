@@ -16,6 +16,8 @@ namespace SmartLockDoor
             {
                 result = _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.Email);
             }
+            result ??= "";
+
             return result;
         }
     }
