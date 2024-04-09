@@ -52,6 +52,7 @@ namespace SmartLockDoor
             }
             else throw new BadRequestException($"Không tìm thấy thành viên có id = '{imageEntityDto.MemberId}'.", "Thông tin thành viên không hợp lệ.");
 
+
             var param = new
             {
                 p_ImageId = Guid.NewGuid(),

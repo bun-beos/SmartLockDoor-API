@@ -60,7 +60,11 @@ namespace SmartLockDoor
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_Register", param, commandType: CommandType.StoredProcedure);
 
-            return newVerifyToken.Token;
+            if (result == 1)
+            {
+                return newVerifyToken.Token;
+            }
+            else return string.Empty;
         }
 
         public async Task<int> UpdateTokenAsync(string email, string token, DateTime tokenExpires, string tokenType)
@@ -132,7 +136,8 @@ namespace SmartLockDoor
 
         public async Task<int> UpdateVerifiedAsync(string email)
         {
-            var param = new {
+            var param = new
+            {
                 p_Email = email,
                 p_VerifyToken = "verified",
                 p_VerifiedDate = DateTime.Now,

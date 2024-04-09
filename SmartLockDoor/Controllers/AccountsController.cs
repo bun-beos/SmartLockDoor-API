@@ -59,7 +59,7 @@ namespace SmartLockDoor.Controllers
 
                 var emailDto = new EmailDto
                 {
-                    To = "trantrungkien532@gmail.com",
+                    To = accountEntityDto.Email,
                     Subject = "Xác thực tài khoản",
                     Body = _emailService.GetVerifyTokenBody(verifyUrl)
                 };
