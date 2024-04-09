@@ -76,6 +76,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 
 var app = builder.Build();
 
