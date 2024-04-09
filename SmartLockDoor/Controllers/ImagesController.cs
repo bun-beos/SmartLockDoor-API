@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,63 +9,70 @@ namespace SmartLockDoor.Controllers
     [ApiController]
     public class ImagesController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ICloudinaryService _cloudinaryService;
+        private readonly IImageService _imageService;
 
-        public ImagesController(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+        public ImagesController(IImageService imageService)
         {
-            _unitOfWork = unitOfWork;
-            _cloudinaryService = cloudinaryService;
+            _imageService = imageService;
         }
 
+        /// <summary>
+        /// Lấy ảnh theo thành viên hoặc thời gian
+        /// </summary>
+        /// <param name="memberId">id thành viên</param>
+        /// <param name="startDate">ngày bắt đầu</param>
+        /// <param name="endDate">ngày kết thúc</param>
+        /// <returns>Danh sách ảnh</returns>
         [HttpGet]
-        public async Task<List<ImageEntity>> GetAllImageAsync()
+        [Authorize(Roles = "User")]
+        public async Task<List<ImageEntity>> FilterImageAsync(Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
-            var sql = "SELECT * FROM image";
-
-            var result = await _unitOfWork.Connection.QueryAsync<ImageEntity>(sql);
+            var result = await _imageService.FilterAsync(memberId, startDate, endDate);
 
             return result.ToList();
         }
 
-        [HttpGet]
-        [Route("Latest")]
-        public async Task<IActionResult> GetLatestImageAsync()
+        /// <summary>
+        /// Thêm ảnh mới
+        /// </summary>
+        /// <param name="imageEntityDto">Thông tin ảnh</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpPost]
+        [Route("NewImage")]
+        public async Task<int> InsertImageAsync(ImageEntityDto imageEntityDto)
         {
-            var sql = "SELECT * FROM image ORDER BY CreatedDate DESC LIMIT 1";
-            try
-            {
-                var image = await _unitOfWork.Connection.QueryFirstAsync<ImageEntity>(sql);
-                return File(image.ImageData, "image/jpeg");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var result = await _imageService.InsertAsync(imageEntityDto);
+
+            return result;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> InsertImageAsync(ImageEntityDto imageEntityDto)
+        /// <summary>
+        /// Xóa ảnh theo id
+        /// </summary>
+        /// <param name="id">id ảnh</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        [Authorize(Roles = "User")]
+        public async Task<int> DeleteImageAsync(Guid id)
         {
-            var param = new
-            {
-                imageId = Guid.NewGuid(),
-                memberName = imageEntityDto.MemberName,
-                imageData = _cloudinaryService.UploadImage(imageEntityDto.ImageData),
-                createdDate = DateTime.Now,
-            };
+            var result = await _imageService.DeleteAsync(id);
 
-            var sql = "INSERT INTO image (ImageId, MemberName, ImageData, CreatedDate) VALUES (@imageId, @memberName, @imageData, @createdDate)";
+            return result;
+        }
 
-            try
-            {
-                await _unitOfWork.Connection.ExecuteAsync(sql, param);
-                return Ok("Upload OK");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+        /// <summary>
+        /// Xóa nhiều ảnh theo danh sách id
+        /// </summary>
+        /// <param name="ids">danh sách id</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpDelete]
+        [Authorize(Roles = "User")]
+        public async Task<int> DeleteImageAsync(List<Guid> ids)
+        {
+            var result = await _imageService.DeleteManyAsync(ids);
+
+            return result;
         }
     }
 }
