@@ -12,10 +12,12 @@ namespace SmartLockDoor.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly IFirebaseService _firebaseService;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IFirebaseService firebaseService)
         {
             _logger = logger;
+            _firebaseService = firebaseService;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
@@ -30,6 +32,11 @@ namespace SmartLockDoor.Controllers
             .ToArray();
         }
 
-        
+        [HttpDelete]
+        public async Task<IActionResult> DeleteImageAsync([FromBody] string imageUrl)
+        {
+            await _firebaseService.DeleteImageAsync(imageUrl);
+            return Ok();
+        }
     }
 }
