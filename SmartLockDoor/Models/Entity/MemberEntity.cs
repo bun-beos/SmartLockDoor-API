@@ -6,10 +6,14 @@
 
         public string MemberName { get; set; } = string.Empty;
 
-        public byte[] MemberPhoto { get; set; } = Array.Empty<byte>();
+        public string MemberPhoto { get; set; } = string.Empty;
 
         public DateTimeOffset CreatedDate { get; set; }
 
+        public string CreatedBy { get; set; } = string.Empty;
+
         public DateTimeOffset ModifiedDate { get; set; }
+
+        public string ModifiedBy { get; set;} = string.Empty;
     }
 }

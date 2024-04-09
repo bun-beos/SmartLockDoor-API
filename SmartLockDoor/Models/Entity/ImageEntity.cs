@@ -4,10 +4,16 @@
     {
         public Guid ImageId { get; set; }
 
-        public string MemberName { get; set; } = string.Empty;
-
-        public byte[] ImageData { get; set; } = Array.Empty<byte>();
+        public string ImageLink { get; set; } = string.Empty;
 
         public DateTimeOffset CreatedDate { get; set; }
+
+        public string CreatedBy { get; set; } = string.Empty;
+
+        public Guid MemberId { get; set; }
+
+        public string MemberName { get; set; } = string.Empty;
+
+        public string MemberPhoto { get; set; } = string.Empty;
     }
 }

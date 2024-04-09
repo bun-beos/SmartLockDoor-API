@@ -2,7 +2,7 @@
 {
     public class ImageEntityDto
     {
-        public string MemberName { get; set; } = string.Empty;
+        public Guid MemberId { get; set; }
 
         public string ImageData { get; set; } = string.Empty;
     }
