@@ -43,6 +43,16 @@
                     UserMessage = conflictException.UserMessage,
                 }.ToString() ?? "");
             }
+            else if (exception is BadRequestException badRequestException)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+
+                await context.Response.WriteAsync(text: new BaseException()
+                {
+                    DevMessage = badRequestException.DevMessage,
+                    UserMessage = badRequestException.UserMessage,
+                }.ToString() ?? "");
+            }
             else
             {
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
