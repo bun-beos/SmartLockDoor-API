@@ -1,6 +1,4 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace SmartLockDoor.Controllers
@@ -9,85 +7,98 @@ namespace SmartLockDoor.Controllers
     [ApiController]
     public class MembersController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ICloudinaryService _cloudinaryService;
-        public MembersController(IUnitOfWork unitOfWork, ICloudinaryService cloudinaryService)
+        private readonly IMemberService _memberService;
+
+        public MembersController(IMemberService memberService)
         {
-            _unitOfWork = unitOfWork;
-            _cloudinaryService = cloudinaryService;
+            _memberService = memberService;
         }
 
+        /// <summary>
+        /// Lấy tất cả thành viên
+        /// </summary>
+        /// <returns>Danh sách thành viên</returns>
         [HttpGet]
-        //[Authorize(Roles = "User")]
+        [Authorize(Roles = "User")]
         public async Task<List<MemberEntity>> GetAllAsync()
         {
-            var sql = "SELECT * FROM member ORDER BY MemberName ASC";
+            var result = await _memberService.GetAllAsync();
 
-            var result = await _unitOfWork.Connection.QueryAsync<MemberEntity>(sql);
-
-            return result.ToList();
+            return result;
         }
 
+        /// <summary>
+        /// Lấy thành viên theo id
+        /// </summary>
+        /// <param name="id">id thành viên</param>
+        /// <returns>Thông tin thành viên</returns>
         [HttpGet]
-        [Route("{name}")]
-        //[Authorize(Roles = "User")]
-        public async Task<MemberEntity?> GetMemberAsync(string name)
+        [Route("{id}")]
+        [Authorize(Roles = "User")]
+        public async Task<MemberEntity> GetMemberAsync(Guid id)
         {
-            var param = new
-            {
-                name,
-            };
+            var result = await _memberService.GetByIdAsync(id);
 
-            var sql = "SELECT * FROM member WHERE MemberName = @name";
-
-            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity>(sql, param);
-
-            if (result != null)
-            {
-                return result;
-            }
-            else throw new NotFoundException($"Không tìm thấy thành viên có tên '{name}'.", "Không tìm thấy dữ liệu thành viên.");
+            return result;
         }
 
+        /// <summary>
+        /// Thêm mới thành viên
+        /// </summary>
+        /// <param name="memberEntityDto">Thông tin thành viên</param>
+        /// <returns>Số bản ghi thay đổi</returns>
         [HttpPost]
-        //[Authorize(Roles = "User")]
-        public async Task<IActionResult> InsertMemberAsync(MemberEntityDto memberEntityDto)
+        [Route("NewMember")]
+        [Authorize(Roles = "User")]
+        public async Task<int> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
-            var param = new
-            {
-                memberId = Guid.NewGuid(),
-                memberName = memberEntityDto.MemberName,
-                memberPhoto = _cloudinaryService.UploadImage(memberEntityDto.MemberPhoto),
-                createdDate = DateTime.Now,
-            };
+            var result = await _memberService.InsertAsync(memberEntityDto);
 
-            var sql = "INSERT INTO member (MemberId, MemberName, MemberPhoto, CreatedDate) VALUES (@memberId, @memberName, @memberPhoto, @createdDate)";
-
-            var memberEntity = await GetMemberAsync(param.memberName);
-            if (memberEntity != null)
-            {
-                throw new ConflictException($"Trùng tên thành viên 'MemberName = {param.memberName}.", "Tên thành viên đã tồn tại.");
-            }
-            else
-            {
-                try
-                {
-                    await _unitOfWork.Connection.ExecuteAsync(sql, param);
-                    return Ok("Upload OK");
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
-            }
+            return result;
         }
 
-        //[HttpPut]
-        //[Route("{memberId")]
-        //[Authorize(Roles = "User")]
-        //public async Task<IActionResult> UpdateMemberAsync(MemberEntityDto memberEntityDto)
-        //{
+        /// <summary>
+        /// Thay đổi thông tin thành viên theo id
+        /// </summary>
+        /// <param name="memberId">id thành viên</param>
+        /// <param name="memberEntityDto">Thông tin mới</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpPut]
+        [Authorize(Roles = "User")]
+        public async Task<int> UpdateMemberAsync(Guid memberId, MemberEntityDto memberEntityDto)
+        {
+            var result = await _memberService.UpdateAsync(memberId, memberEntityDto);
 
-        //}
+            return result;
+        }
+
+        /// <summary>
+        /// Xóa thành viên theo id
+        /// </summary>
+        /// <param name="id">id thành viên</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpDelete]
+        [Route("{id}")]
+        [Authorize(Roles = "User")]
+        public async Task<int> DeleteMemberAsync(Guid id)
+        {
+            var result = await _memberService.DeleteAsync(id);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Xóa nhiều thành viên theo list id
+        /// </summary>
+        /// <param name="ids">list id</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpDelete]
+        [Authorize(Roles = "User")]
+        public async Task<int> DeleteManyMemberAsync(List<Guid> ids)
+        {
+            var result = await _memberService.DeleteManyAsync(ids);
+
+            return result;
+        }
     }
 }
