@@ -1,13 +1,5 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 
 namespace SmartLockDoor.Controllers
 {
@@ -15,21 +7,17 @@ namespace SmartLockDoor.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
         private readonly IUserService _userService;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IAccountService _accountService;
         private readonly IEmailService _emailService;
-        private readonly ICloudinaryService _cloudinaryService;
+        private readonly IFirebaseService _firebaseService;
 
-        public AccountsController(IConfiguration configuration, IUserService userService, IUnitOfWork unitOfWork, IAccountService accountService, ICloudinaryService cloudinaryService, IEmailService emailService)
+        public AccountsController(IUserService userService, IAccountService accountService, IEmailService emailService, IFirebaseService firebaseService)
         {
-            _configuration = configuration;
             _userService = userService;
-            _unitOfWork = unitOfWork;
             _accountService = accountService;
             _emailService = emailService;
-            _cloudinaryService = cloudinaryService;
+            _firebaseService = firebaseService;
         }
 
         /// <summary>
@@ -40,11 +28,9 @@ namespace SmartLockDoor.Controllers
         [Authorize(Roles = "User")]
         public async Task<List<AccountEntity>> GetAllAsync()
         {
-            var sql = "SELECT * FROM account ORDER BY VerifiedDate DESC";
+            var result = await _accountService.GetAllAsync();
 
-            var accountEntities = await _unitOfWork.Connection.QueryAsync<AccountEntity>(sql);
-
-            return accountEntities.ToList();
+            return result;
         }
 
         /// <summary>
@@ -75,7 +61,7 @@ namespace SmartLockDoor.Controllers
                 {
                     To = "trantrungkien532@gmail.com",
                     Subject = "Xác thực tài khoản",
-                    Body = _emailService.GetVerifyBodyEmail(verifyUrl)
+                    Body = _emailService.GetVerifyTokenBody(verifyUrl)
                 };
 
                 _emailService.SendEmail(emailDto);
@@ -95,7 +81,7 @@ namespace SmartLockDoor.Controllers
                 {
                     To = "trantrungkien532@gmail.com",
                     Subject = "Xác thực tài khoản",
-                    Body = _emailService.GetVerifyBodyEmail(verifyUrl)
+                    Body = _emailService.GetVerifyTokenBody(verifyUrl)
                 };
 
                 _emailService.SendEmail(emailDto);
@@ -123,7 +109,7 @@ namespace SmartLockDoor.Controllers
 
             if (result == 1)
             {
-                return Ok();
+                return Ok("Tài khoản của bạn đã được xác thực.");
             }
             else throw new Exception("Cập nhập dữ liệu thất bại.");
         }
@@ -178,7 +164,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("ForgotPassword")]
-        public async Task<IActionResult> ForgotPasswordAsync(string email)
+        public async Task<IActionResult> ForgotPasswordAsync([FromBody] string email)
         {
             var accountEntity = await _accountService.GetAccountAsync("Email", email);
 
@@ -195,6 +181,15 @@ namespace SmartLockDoor.Controllers
             var resetPasswordToken = _accountService.CreatePasswordResetToken();
 
             var result = await _accountService.UpdateTokenAsync(email, resetPasswordToken.Token, resetPasswordToken.Expires, "PasswordToken");
+
+            var emailDto = new EmailDto
+            {
+                To = "trantrungkien532@gmail.com",
+                Subject = $"Mã xác thực của bạn là {resetPasswordToken.Token}",
+                Body = _emailService.GetPasswordTokenBody(resetPasswordToken.Token)
+            };
+
+            _emailService.SendEmail(emailDto);
 
             if (result == 1)
             {
@@ -234,11 +229,11 @@ namespace SmartLockDoor.Controllers
         [HttpPut]
         [Route("Username")]
         [Authorize(Roles = "User")]
-        public async Task<int> UpdateUsernameAsync(string username)
+        public async Task<int> UpdateUsernameAsync(string name)
         {
             var email = _userService.GetMyEmail();
 
-            var result = await _accountService.UpdateUserInfoAsync(email, username, null);
+            var result = await _accountService.UpdateUserInfoAsync(email, name, null);
 
             return result;
         }
@@ -253,7 +248,7 @@ namespace SmartLockDoor.Controllers
         {
             var email = _userService.GetMyEmail();
 
-            var imageUri = _cloudinaryService.UploadImage(imageBase64Data);
+            var imageUri = await _firebaseService.UploadImageAsync(FolderEnum.Account, imageBase64Data);
 
             var result = await _accountService.UpdateUserInfoAsync(email, null, imageUri);
 
@@ -266,7 +261,7 @@ namespace SmartLockDoor.Controllers
         [HttpPut]
         [Route("Password")]
         [Authorize(Roles = "User")]
-        public async Task<int> UpdatePasswordAsync([FromBody] PasswordChange passwordChange)
+        public async Task<int> UpdatePasswordAsync(PasswordChange passwordChange)
         {
             var email = _userService.GetMyEmail();
 
@@ -293,7 +288,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("NewAccessToken")]
-        public async Task<ActionResult<Token>> GetNewAccessTokenAsync(string refreshToken)
+        public async Task<ActionResult<Token>> GetNewAccessTokenAsync([FromBody] string refreshToken)
         {
             var accountEntity = await _accountService.GetAccountAsync("RefreshToken", refreshToken);
 
@@ -328,6 +323,46 @@ namespace SmartLockDoor.Controllers
                 return Ok(token);
             }
             else throw new Exception("Cập nhập RefreshToken thất bại.");
+        }
+
+        /// <summary>
+        /// Đăng xuất
+        /// </summary>
+        /// <param name="refreshToken">refresh token</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        [HttpPost]
+        [Route("LogOut")]
+        [Authorize(Roles = "User")]
+        public async Task<int> LogOutAsync([FromBody] string refreshToken)
+        {
+            var result = await _accountService.DeleteRefreshTokenAsync(refreshToken);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Xóa tài khoản
+        /// </summary>
+        /// <param name="password">Mật khẩu</param>
+        /// <returns></returns>
+        /// <exception cref="BadHttpRequestException">Mật khẩu không đúng</exception>
+        [HttpDelete]
+        [Route("Delete")]
+        [Authorize(Roles = "User")]
+        public async Task<int> DeleteAccountAsync(string password)
+        {
+            var email = _userService.GetMyEmail();
+
+            var accountEntity = await _accountService.GetAccountAsync("Email", email);
+
+            if (!_accountService.VerifyPasswordHash(password, accountEntity!.PasswordHash, accountEntity.PasswordSalt))
+            {
+                throw new BadHttpRequestException("Mật khẩu không đúng.");
+            }
+
+            var result = await _accountService.DeleteAccountAsync(email);
+
+            return result;
         }
     }
 }
