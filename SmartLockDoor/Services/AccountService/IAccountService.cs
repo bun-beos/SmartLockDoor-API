@@ -3,6 +3,12 @@
     public interface IAccountService
     {
         /// <summary>
+        /// Lấy ra tất cả tài khoản
+        /// </summary>
+        /// <returns>Danh sách tài khoản</returns>
+        Task<List<AccountEntity>> GetAllAsync();
+
+        /// <summary>
         /// Lấy tài khoản theo Email, VerifyToken, RefreshToken, PasswordToken
         /// </summary>
         /// <param name="column">Tên cột</param>
@@ -58,6 +64,21 @@
         /// <param name="passwordSalt">PasswordSalt</param>
         /// <returns>1-Thành công, 0-Thất bại</returns>
         Task<int> UpdatePasswordAsync(string email, byte[] passwordHash, byte[] passwordSalt);
+
+        /// <summary>
+        /// Xóa refresh token khi đăng xuất
+        /// </summary>
+        /// <param name="refreshToken">refresh token</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        Task<int> DeleteRefreshTokenAsync(string refreshToken);
+
+        /// <summary>
+        /// Xóa tài khoản
+        /// </summary>
+        /// <param name="email">email người dùng</param>
+        /// <returns>Số bản ghi thay đổi</returns>
+        Task<int> DeleteAccountAsync(string email);
+
 
         /// <summary>
         /// Tạo PasswordHash

@@ -13,14 +13,19 @@ namespace SmartLockDoor
     public class AccountService : IAccountService
     {
         private readonly IConfiguration _configuration;
-        private readonly IUserService _userService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public AccountService(IConfiguration configuration, IUserService userService, IUnitOfWork unitOfWork)
+        public AccountService(IConfiguration configuration, IUnitOfWork unitOfWork)
         {
             _configuration = configuration;
-            _userService = userService;
             _unitOfWork = unitOfWork;
+        }
+
+        public async Task<List<AccountEntity>> GetAllAsync()
+        {
+            var result = await _unitOfWork.Connection.QueryAsync<AccountEntity>("Proc_Account_GetAll", commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
         }
 
         public async Task<AccountEntity?> GetAccountAsync(string columnName, string columnValue)
@@ -138,6 +143,31 @@ namespace SmartLockDoor
 
             return result;
         }
+
+        public async Task<int> DeleteRefreshTokenAsync(string refreshToken)
+        {
+            var param = new
+            {
+                p_RefreshToken = refreshToken
+            };
+
+            var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_DeleteRefreshToken", param, commandType: CommandType.StoredProcedure);
+
+            return result;
+        }
+
+        public async Task<int> DeleteAccountAsync(string email)
+        {
+            var param = new
+            {
+                p_Email = email
+            };
+
+            var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_Delete", param, commandType: CommandType.StoredProcedure);
+
+            return result;
+        }
+
 
         public void CreatePasswordHash(string password, out byte[] paswordHash, out byte[] passwordSalt)
         {

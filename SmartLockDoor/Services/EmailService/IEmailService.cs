@@ -4,6 +4,8 @@
     {
         void SendEmail(EmailDto emailDto);
 
-        string GetVerifyBodyEmail(string verifyUrl);
+        string GetVerifyTokenBody(string verifyUrl);
+
+        string GetPasswordTokenBody(string passwordToken);
     }
 }

@@ -63,7 +63,7 @@ namespace SmartLockDoor
             }
         }
 
-        private string GetPublicIdFromUrl(string imageUri)
+        private static string GetPublicIdFromUrl(string imageUri)
         {
             var publicIdIndex = imageUri.LastIndexOf("/") + 1;
             var extensionIndex = imageUri.LastIndexOf(".");
