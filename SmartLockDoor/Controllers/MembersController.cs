@@ -19,7 +19,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
         [HttpGet]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<List<MemberEntity>> GetAllAsync()
         {
             var result = await _memberService.GetAllAsync();
@@ -34,7 +34,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Thông tin thành viên</returns>
         [HttpGet]
         [Route("{id}")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<MemberEntity> GetMemberAsync(Guid id)
         {
             var result = await _memberService.GetByIdAsync(id);
@@ -49,7 +49,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPost]
         [Route("NewMember")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
             var result = await _memberService.InsertAsync(memberEntityDto);
@@ -64,7 +64,7 @@ namespace SmartLockDoor.Controllers
         /// <param name="memberEntityDto">Thông tin mới</param>
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPut]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> UpdateMemberAsync(Guid memberId, MemberEntityDto memberEntityDto)
         {
             var result = await _memberService.UpdateAsync(memberId, memberEntityDto);
@@ -79,7 +79,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpDelete]
         [Route("{id}")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteMemberAsync(Guid id)
         {
             var result = await _memberService.DeleteAsync(id);
@@ -93,7 +93,7 @@ namespace SmartLockDoor.Controllers
         /// <param name="ids">list id</param>
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpDelete]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteManyMemberAsync(List<Guid> ids)
         {
             var result = await _memberService.DeleteManyAsync(ids);

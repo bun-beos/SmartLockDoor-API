@@ -25,7 +25,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách tài khoản</returns>
         [HttpGet]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<List<AccountEntity>> GetAllAsync()
         {
             var result = await _accountService.GetAllAsync();
@@ -140,7 +140,7 @@ namespace SmartLockDoor.Controllers
                 return BadRequest("Mật khẩu không đúng.");
             }
 
-            var accessToken = _accountService.CreateAccessToken(accountEntityDto.Email, "User");
+            var accessToken = _accountService.CreateAccessToken(accountEntityDto.Email, nameof(RolesEnum.User));
 
             var newRefreshToken = _accountService.CreateRefreshToken();
 
@@ -228,7 +228,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPut]
         [Route("Username")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> UpdateUsernameAsync(string name)
         {
             var email = _userService.GetMyEmail();
@@ -243,7 +243,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPut]
         [Route("UserImage")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> UpdateUserImageAsync([FromBody] string imageBase64Data)
         {
             var email = _userService.GetMyEmail();
@@ -260,7 +260,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPut]
         [Route("Password")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> UpdatePasswordAsync(PasswordChange passwordChange)
         {
             var email = _userService.GetMyEmail();
@@ -302,7 +302,7 @@ namespace SmartLockDoor.Controllers
                 return Unauthorized("Refresh token đã hết hiệu lực.");
             }
 
-            string accessToken = _accountService.CreateAccessToken(accountEntity.Email, "User");
+            string accessToken = _accountService.CreateAccessToken(accountEntity.Email, nameof(RolesEnum.User));
             var newRefreshToken = _accountService.CreateRefreshToken();
 
             var token = new Token
@@ -332,7 +332,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPost]
         [Route("LogOut")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> LogOutAsync([FromBody] string refreshToken)
         {
             var result = await _accountService.DeleteRefreshTokenAsync(refreshToken);
@@ -348,7 +348,7 @@ namespace SmartLockDoor.Controllers
         /// <exception cref="BadHttpRequestException">Mật khẩu không đúng</exception>
         [HttpDelete]
         [Route("Delete")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteAccountAsync(string password)
         {
             var email = _userService.GetMyEmail();

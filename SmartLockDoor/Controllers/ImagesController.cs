@@ -24,7 +24,7 @@ namespace SmartLockDoor.Controllers
         /// <param name="endDate">ngày kết thúc</param>
         /// <returns>Danh sách ảnh</returns>
         [HttpGet]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<List<ImageEntity>> FilterImageAsync(Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
             var result = await _imageService.FilterAsync(memberId, startDate, endDate);
@@ -53,7 +53,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpDelete]
         [Route("{id}")]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteImageAsync(Guid id)
         {
             var result = await _imageService.DeleteAsync(id);
@@ -67,7 +67,7 @@ namespace SmartLockDoor.Controllers
         /// <param name="ids">danh sách id</param>
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpDelete]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteImageAsync(List<Guid> ids)
         {
             var result = await _imageService.DeleteManyAsync(ids);
