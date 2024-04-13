@@ -11,13 +11,15 @@ namespace SmartLockDoor.Controllers
         private readonly IAccountService _accountService;
         private readonly IEmailService _emailService;
         private readonly IFirebaseService _firebaseService;
+        private readonly string _host;
 
-        public AccountsController(IUserService userService, IAccountService accountService, IEmailService emailService, IFirebaseService firebaseService)
+        public AccountsController(IConfiguration configuration, IUserService userService, IAccountService accountService, IEmailService emailService, IFirebaseService firebaseService)
         {
             _userService = userService;
             _accountService = accountService;
             _emailService = emailService;
             _firebaseService = firebaseService;
+            _host = configuration["Host"];
         }
 
         /// <summary>
@@ -55,7 +57,7 @@ namespace SmartLockDoor.Controllers
 
                 verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
 
-                var verifyUrl = $"https://localhost:7106/api/v1/Accounts/VerifyAccount?token={verifyToken}";
+                var verifyUrl = $"{_host}/api/v1/Accounts/VerifyAccount?code={verifyToken}";
 
                 var emailDto = new EmailDto
                 {
@@ -96,20 +98,25 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpGet]
         [Route("VerifyAccount")]
-        public async Task<ActionResult<string>> VerifyAccountAsync(string token)
+        public async Task<IActionResult> VerifyAccountAsync(string code)
         {
-            var accountEntity = await _accountService.GetAccountAsync("VerifyToken", token);
+            var accountEntity = await _accountService.GetAccountAsync("VerifyToken", code);
 
             if (accountEntity == null || accountEntity.VerifyTokenExpires < DateTime.Now)
             {
-                return BadRequest("Mã xác thực không hợp lệ");
+                return Redirect($"{_host}/api/v1/Accounts/Verify/failure");
+            }
+
+            if (accountEntity.VerifiedDate != null)
+            {
+                return Redirect($"{_host}/api/v1/Accounts/Verify/success");
             }
 
             var result = await _accountService.UpdateVerifiedAsync(accountEntity.Email);
 
             if (result == 1)
             {
-                return Ok("Tài khoản của bạn đã được xác thực.");
+                return Redirect($"{_host}/api/v1/Accounts/Verify/success");
             }
             else throw new Exception("Cập nhập dữ liệu thất bại.");
         }
@@ -363,6 +370,32 @@ namespace SmartLockDoor.Controllers
             var result = await _accountService.DeleteAccountAsync(email);
 
             return result;
+        }
+
+        /// <summary>
+        /// Thông báo xác thực thành công
+        /// </summary>
+        /// <returns>html content</returns>
+        [HttpGet]
+        [Route("Verify/success")]
+        public IActionResult GetSuccess()
+        {
+            string htmlContent = "<head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> <style>body {margin: 0;} .header {display: flex; align-items: center; background-color: #3dafdc; color: #fff; height: 70px; padding-left: 30px; font-size: 22px;} img {width: 50px; height: 50px;} span {margin-top: 14px;} .body {padding: 50px 100px;}.success {font-size: 22px; color: #42bded; margin-bottom: 50px;} .notification {font-size: 18px; margin-top: 40px; line-height: 1.5em;} @media only screen and (max-width: 600px) {.body {padding: 50px 50px;}} </style> </head>  <body> <div class=\"header\"> <img src=\"https://firebasestorage.googleapis.com/v0/b/smart-doorbell-ffebe.appspot.com/o/Smart%20Lock%20Door%2FApp%2Fapp_logo.png?alt=media&token=a6bf0bc1-7240-4432-a7d8-e6b89c0f1ed6\" alt=\"Logo\"> <span>Smart Lock Door</span> </div>  <div class=\"body\"> <div class=\"success\">Đã xác thực thành công</div> <hr> <div class=\"notification\">Chúc mừng!<br><br>Tài khoản của bạn đã được xác thực. Quay lại ứng dụng để có thể đăng nhập ngay bây giờ.</div> </div> </body>";
+
+            return Content(htmlContent, "text/html");
+        }
+
+        /// <summary>
+        /// Thông báo xác thực thất bại
+        /// </summary>
+        /// <returns>html content</returns>
+        [HttpGet]
+        [Route("Verify/failure")]
+        public IActionResult GetFailure()
+        {
+            string htmlContent = "<head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> <style>body {margin: 0;} .header {display: flex; align-items: center; background-color: #3dafdc; color: #fff; height: 70px; padding-left: 30px; font-size: 22px;} img {width: 50px; height: 50px;} span {margin-top: 14px;} .body {padding: 50px 100px;}.failure {font-size: 22px; color: #ed4248; margin-bottom: 50px;} .notification {font-size: 18px; margin-top: 40px; line-height: 1.5em;} @media only screen and (max-width: 600px) {.body {padding: 50px 50px;}} </style> </head>  <body> <div class=\"header\"> <img src=\"https://firebasestorage.googleapis.com/v0/b/smart-doorbell-ffebe.appspot.com/o/Smart%20Lock%20Door%2FApp%2Fapp_logo.png?alt=media&token=a6bf0bc1-7240-4432-a7d8-e6b89c0f1ed6\" alt=\"Logo\"> <span>Smart Lock Door</span> </div>  <div class=\"body\"> <div class=\"failure\">Xác thực thất bại</div> <hr> <div class=\"notification\">Mã xác thực của bạn đã hết hạn hoặc không hợp lệ.<br>Vui lòng đăng ký tài khoản trên ứng dụng để nhận mã xác thực mới.</div> </div> </body>";
+
+            return Content(htmlContent, "text/html");
         }
     }
 }

@@ -114,7 +114,7 @@ namespace SmartLockDoor
                 p_ModifiedDate = DateTime.Now
             };
 
-            var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateRegister", param, commandType: CommandType.StoredProcedure);
+            await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateRegister", param, commandType: CommandType.StoredProcedure);
 
             return newVerifyToken.Token;
         }
@@ -139,7 +139,6 @@ namespace SmartLockDoor
             var param = new
             {
                 p_Email = email,
-                p_VerifyToken = "verified",
                 p_VerifiedDate = DateTime.Now,
                 p_ModifiedDate = DateTime.Now,
             };
@@ -196,7 +195,7 @@ namespace SmartLockDoor
             var verifyToken = new VerifyToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
-                Expires = DateTime.Now.AddMinutes(10),
+                Expires = DateTime.Now.AddHours(1),
             };
 
             return verifyToken;
