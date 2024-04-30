@@ -44,24 +44,24 @@ namespace SmartLockDoor
             }
         }
 
-        public string UploadImage(string imageBase64)
-        {
-            var uploadParams = new ImageUploadParams()
-            {
-                File = new FileDescription(imageBase64)
-            };
+        //public string UploadImage(string imageBase64)
+        //{
+            //var uploadParams = new ImageUploadParams()
+            //{
+            //    File = new FileDescription(imageBase64)
+            //};
 
-            try
-            {
-                var uploadResult = _cloudinary.Upload(uploadParams);
+            //try
+            //{
+            //    var uploadResult = _cloudinary.Upload(uploadParams);
                 
-                return uploadResult!.SecureUri.AbsoluteUri;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
+            //    return uploadResult.SecureUri.AbsoluteUri;
+            //}
+            //catch
+            //{
+            //    return string.Empty;
+            //}
+        //}
 
         private static string GetPublicIdFromUrl(string imageUri)
         {

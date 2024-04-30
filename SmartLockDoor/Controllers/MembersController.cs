@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.CodeDom;
 
 namespace SmartLockDoor.Controllers
 {
@@ -52,9 +53,16 @@ namespace SmartLockDoor.Controllers
         [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
+            var memberEntity = await _memberService.FindByNameAsync(memberEntityDto.MemberName);
+
+            if (memberEntity != null)
+            {
+                throw new ConflictException($"Trùng tên thành viên '{memberEntityDto.MemberName}'.", "Tên thành viên đã tồn tại.");
+            } else {
             var result = await _memberService.InsertAsync(memberEntityDto);
 
             return result;
+            }
         }
 
         /// <summary>

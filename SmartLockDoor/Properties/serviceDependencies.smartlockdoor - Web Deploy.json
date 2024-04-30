@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "identityapp1": {
+      "connectionInfo": "App registration: smart lock door, Tenant: Default Directory (trungkienttmhoutlook.onmicrosoft.com - Microsoft Entra ID)",
+      "type": "identityapp.default"
+    },
+    "apis1": {
+      "apiEndpoint": "https://smartlockdoorapi.azure-api.net/api/v1",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ApiManagement/service/SmartLockDoorApi/apis/SmartLockDoor",
+      "type": "apis.azure"
+    }
+  }
+}

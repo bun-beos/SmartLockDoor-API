@@ -33,6 +33,7 @@
                     UserMessage = notFoundException.UserMessage,
                 }.ToString() ?? "");
             }
+
             else if (exception is ConflictException conflictException)
             {
                 context.Response.StatusCode = StatusCodes.Status409Conflict;
@@ -43,6 +44,7 @@
                     UserMessage = conflictException.UserMessage,
                 }.ToString() ?? "");
             }
+
             else if (exception is BadRequestException badRequestException)
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -63,7 +65,7 @@
 #if DEBUG
                     DevMessage = exception.Message,
 #else
-                    DevMessage = "",
+                    DevMessage = exception.Message,
 #endif
                 }.ToString() ?? "");
             }

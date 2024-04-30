@@ -34,6 +34,18 @@ namespace SmartLockDoor
 
             return result;
         }
+        
+        public async Task<MemberEntity?> FindByNameAsync(string name)
+        {
+            var param = new
+            {
+                p_MemberName = name,
+            };
+
+            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity>("Proc_Member_GetByName", param, commandType: CommandType.StoredProcedure);
+
+            return result;
+        }
 
         public async Task<MemberEntity> GetByIdAsync(Guid id)
         {

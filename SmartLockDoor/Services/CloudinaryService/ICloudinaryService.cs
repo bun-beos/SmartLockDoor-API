@@ -4,6 +4,6 @@
     {
         int DeleteImage(string imageUrl);
 
-        string UploadImage(string imageBase64);
+        //string UploadImage(string imageBase64);
     }
 }

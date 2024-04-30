@@ -35,6 +35,18 @@ namespace SmartLockDoor.Controllers
             return result;
         }
 
+        [HttpGet]
+        [Route("Info")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
+        public async Task<AccountEntity?> GetAccountAsync()
+        {
+            var email = _userService.GetMyEmail();
+
+            var result = await _accountService.GetAccountAsync("Email", email);
+
+            return result;
+        }
+
         /// <summary>
         /// Đăng ký tài khoản
         /// </summary>
@@ -51,46 +63,32 @@ namespace SmartLockDoor.Controllers
 
             var accountEntity = await _accountService.GetAccountAsync("Email", accountEntityDto.Email);
 
+            string verifyToken;
+
             if (accountEntity == null)
             {
-                var verifyToken = await _accountService.RegisterAsync(accountEntityDto);
-
-                verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
-
-                var verifyUrl = $"{_host}/api/v1/Accounts/VerifyAccount?code={verifyToken}";
-
-                var emailDto = new EmailDto
-                {
-                    To = accountEntityDto.Email,
-                    Subject = "Xác thực tài khoản",
-                    Body = _emailService.GetVerifyTokenBody(verifyUrl)
-                };
-
-                _emailService.SendEmail(emailDto);
-
-                return 1;
+                verifyToken = await _accountService.RegisterAsync(accountEntityDto);
             }
-
-            if (accountEntity.VerifiedDate == null)
+            else if (accountEntity.VerifiedDate == null)
             {
-                var verifyToken = await _accountService.UpdateRegisterAsync(accountEntityDto);
-
-                verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
-
-                var verifyUrl = $"https://localhost:7106/api/v1/Accounts/VerifyAccount?token={verifyToken}";
-
-                var emailDto = new EmailDto
-                {
-                    To = "trantrungkien532@gmail.com",
-                    Subject = "Xác thực tài khoản",
-                    Body = _emailService.GetVerifyTokenBody(verifyUrl)
-                };
-
-                _emailService.SendEmail(emailDto);
-
-                return 1;
+                verifyToken = await _accountService.UpdateRegisterAsync(accountEntityDto);
             }
             else throw new ConflictException($"Email '{accountEntityDto.Email}' đã tồn tại.", "Email đã đăng ký tài khoản.");
+
+            verifyToken = verifyToken.Replace("+", "%2B").Replace("/", "%2F").Replace("=", "%3D");
+
+            var verifyUrl = $"{_host}/api/v1/Accounts/VerifyAccount?code={verifyToken}";
+
+            var emailDto = new EmailDto
+            {
+                To = accountEntityDto.Email,
+                Subject = "Xác thực tài khoản",
+                Body = _emailService.GetVerifyTokenBody(verifyUrl)
+            };
+
+            _emailService.SendEmail(emailDto);
+
+            return 1;
         }
 
         /// <summary>
@@ -128,23 +126,23 @@ namespace SmartLockDoor.Controllers
         /// <returns>Access token</returns>
         [HttpPost]
         [Route("Login")]
-        public async Task<ActionResult<Token>> LoginAsync(AccountEntityDto accountEntityDto)
+        public async Task<Token> LoginAsync(AccountEntityDto accountEntityDto)
         {
             var accountEntity = await _accountService.GetAccountAsync("Email", accountEntityDto.Email);
 
             if (accountEntity == null)
             {
-                return BadRequest("Email chưa đăng ký tài khoản.");
+                throw new BadRequestException($"Không tìm thấy email: '{accountEntityDto.Email}'.", "Email chưa đăng ký tài khoản.");
             }
 
             if (accountEntity.VerifiedDate == null)
             {
-                return BadRequest("Email chưa được xác thực.");
+                throw new BadRequestException($"Tài khoản '{accountEntityDto.Email}' chưa xác thực.", "Email chưa được xác thực.");
             }
 
             if (!_accountService.VerifyPasswordHash(accountEntityDto.Password, accountEntity.PasswordHash, accountEntity.PasswordSalt))
             {
-                return BadRequest("Mật khẩu không đúng.");
+                throw new BadRequestException("Mật khẩu không đúng.", "Mật khẩu không hợp lệ.");
             }
 
             var accessToken = _accountService.CreateAccessToken(accountEntityDto.Email, nameof(RolesEnum.User));
@@ -161,7 +159,7 @@ namespace SmartLockDoor.Controllers
 
             if (result == 1)
             {
-                return Ok(token);
+                return token;
             }
             else throw new Exception("Cập nhập RefreshToken thất bại.");
         }
@@ -171,18 +169,18 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("ForgotPassword")]
-        public async Task<IActionResult> ForgotPasswordAsync([FromBody] string email)
+        public async Task<int> ForgotPasswordAsync([FromBody] string email)
         {
             var accountEntity = await _accountService.GetAccountAsync("Email", email);
 
-            if (accountEntity == null)
+            if(accountEntity == null)
             {
-                return BadRequest("Email chưa đăng ký");
+                throw new BadRequestException($"Không tìm thấy email: '{email}'.", "Email chưa đăng ký tài khoản.");
             }
 
             if (accountEntity.VerifiedDate == null)
             {
-                return BadRequest("Email chưa được xác thực");
+                throw new BadRequestException($"Tài khoản '{email}' chưa xác thực.", "Email chưa được xác thực.");
             }
 
             var resetPasswordToken = _accountService.CreatePasswordResetToken();
@@ -191,18 +189,14 @@ namespace SmartLockDoor.Controllers
 
             var emailDto = new EmailDto
             {
-                To = "trantrungkien532@gmail.com",
+                To = email,
                 Subject = $"Mã xác thực của bạn là {resetPasswordToken.Token}",
                 Body = _emailService.GetPasswordTokenBody(resetPasswordToken.Token)
             };
 
             _emailService.SendEmail(emailDto);
 
-            if (result == 1)
-            {
-                return Ok();
-            }
-            else throw new Exception("Cập nhập PasswordToken thất bại.");
+            return result;
         }
 
         /// <summary>
@@ -210,24 +204,20 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("ResetPassword")]
-        public async Task<IActionResult> ResetPasswordAsync(PasswordReset passwordReset)
+        public async Task<int> ResetPasswordAsync(PasswordReset passwordReset)
         {
             var accountEntity = await _accountService.GetAccountAsync("PasswordToken", passwordReset.PasswordToken);
 
             if (accountEntity == null || accountEntity.PasswordTokenExpires < DateTime.Now)
             {
-                return BadRequest("Mã xác thực không hợp lệ");
+                throw new BadRequestException($"Mã xác thực {passwordReset.PasswordToken} không hợp lệ.", "Mã xác thực không hợp lệ.");
             }
 
             _accountService.CreatePasswordHash(passwordReset.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);
 
             var result = await _accountService.UpdatePasswordAsync(accountEntity.Email, passwordHash, passwordSalt);
 
-            if (result == 1)
-            {
-                return Ok();
-            }
-            else throw new Exception("Cập nhập mật khẩu thất bại.");
+            return result;
         }
 
         /// <summary>
@@ -354,9 +344,9 @@ namespace SmartLockDoor.Controllers
         /// <returns></returns>
         /// <exception cref="BadHttpRequestException">Mật khẩu không đúng</exception>
         [HttpDelete]
-        [Route("Delete")]
+        [Route("Deletion")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<int> DeleteAccountAsync(string password)
+        public async Task<int> DeleteAccountAsync([FromBody] string password)
         {
             var email = _userService.GetMyEmail();
 

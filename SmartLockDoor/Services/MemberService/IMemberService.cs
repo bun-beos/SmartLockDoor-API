@@ -14,6 +14,13 @@
         /// <param name="id">id thành viên</param>
         /// <returns>Thông tin thành viên hoặc null</returns>
         Task<MemberEntity?> FindByIdAsync(Guid id);
+        
+        /// <summary>
+        /// Tìm thành viên theo name
+        /// </summary>
+        /// <param name="name">tên thành viên</param>
+        /// <returns>Thông tin thành viên hoặc null</returns>
+        Task<MemberEntity?> FindByNameAsync(string name);
 
         /// <summary>
         /// Lấy thành viên theo id
