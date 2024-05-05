@@ -35,6 +35,10 @@ namespace SmartLockDoor.Controllers
             return result;
         }
 
+        /// <summary>
+        /// Lấy thông tin tài khoản
+        /// </summary>
+        /// <returns>Thông tin tài khoản người dùng</returns>
         [HttpGet]
         [Route("Info")]
         [Authorize(Roles = nameof(RolesEnum.User))]
@@ -152,7 +156,8 @@ namespace SmartLockDoor.Controllers
             var token = new Token
             {
                 AccessToken = accessToken,
-                RefreshToken = newRefreshToken.Token
+                RefreshToken = newRefreshToken.Token,
+                RefreshTokenExpires = newRefreshToken.Expires
             };
 
             var result = await _accountService.UpdateTokenAsync(accountEntityDto.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
@@ -285,39 +290,35 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         [HttpPost]
         [Route("NewAccessToken")]
-        public async Task<ActionResult<Token>> GetNewAccessTokenAsync([FromBody] string refreshToken)
+        public async Task<Token> GetNewAccessTokenAsync([FromBody] string refreshToken)
         {
-            var accountEntity = await _accountService.GetAccountAsync("RefreshToken", refreshToken);
-
-            if (accountEntity == null)
-            {
-                return Unauthorized("Refresh token không hợp lệ.");
-            }
+            var accountEntity = await _accountService.GetAccountAsync("RefreshToken", refreshToken) ?? throw new BadRequestException("Refresh token không hợp lệ.", "Refresh token không hợp lệ.");
 
             if (accountEntity.RefreshTokenExpires < DateTime.Now)
             {
-                return Unauthorized("Refresh token đã hết hiệu lực.");
+                throw new BadRequestException("Refresh token đã hết hiệu lực.", "Refresh token không hợp lệ.");
             }
 
-            string accessToken = _accountService.CreateAccessToken(accountEntity.Email, nameof(RolesEnum.User));
+            var accessToken = _accountService.CreateAccessToken(accountEntity.Email, nameof(RolesEnum.User));
             var newRefreshToken = _accountService.CreateRefreshToken();
-
-            var token = new Token
-            {
-                AccessToken = accessToken,
-                RefreshToken = newRefreshToken.Token
-            };
 
             if (accountEntity.RefreshTokenExpires != null)
             {
                 newRefreshToken.Expires = accountEntity.RefreshTokenExpires.Value.DateTime;
             }
 
+            var token = new Token
+            {
+                AccessToken = accessToken,
+                RefreshToken = newRefreshToken.Token,
+                RefreshTokenExpires = newRefreshToken.Expires
+            };
+
             var result = await _accountService.UpdateTokenAsync(accountEntity.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
 
             if (result == 1)
             {
-                return Ok(token);
+                return token;
             }
             else throw new Exception("Cập nhập RefreshToken thất bại.");
         }
