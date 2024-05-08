@@ -10,7 +10,7 @@ namespace SmartLockDoor.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok("Server is running!");
+            return Ok($"Server is running! Version {DateTime.Now}");
         }
     }
 }

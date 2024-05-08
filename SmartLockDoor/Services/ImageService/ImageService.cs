@@ -16,6 +16,13 @@ namespace SmartLockDoor
             _memberService = memberService;
         }
 
+        public async Task<DateTimeOffset?> GetOldestAsync()
+        {
+            var imageEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<ImageEntity>("Proc_Image_GetOldest", commandType: CommandType.StoredProcedure);
+
+            return imageEntity?.CreatedDate;
+        }
+
         public async Task<ImageEntity?> FindByIdAsync(Guid id)
         {
             var param = new
@@ -69,11 +76,11 @@ namespace SmartLockDoor
 
         public async Task<int> DeleteAsync(Guid imageId)
         {
-            var imageEntiy = await FindByIdAsync(imageId);
+            var imageEntity = await FindByIdAsync(imageId);
 
-            if (imageEntiy != null)
+            if (imageEntity != null)
             {
-                await _firebaseService.DeleteImageAsync(imageEntiy.ImageLink);
+                await _firebaseService.DeleteImageAsync(imageEntity.ImageLink);
             }
 
             var param = new

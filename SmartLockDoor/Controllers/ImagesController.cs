@@ -17,6 +17,20 @@ namespace SmartLockDoor.Controllers
         }
 
         /// <summary>
+        /// Lấy thời gian ảnh cũ nhất
+        /// </summary>
+        /// <returns>Thời gian của ảnh cũ nhất</returns>
+        [HttpGet]
+        [Route("OldestTime")]
+        [Authorize(Roles = nameof(RolesEnum.User))]
+        public async Task<DateTimeOffset?> GetOldestAsync()
+        {
+            var result = await _imageService.GetOldestAsync();
+
+            return result;
+        }
+
+        /// <summary>
         /// Lấy ảnh theo thành viên hoặc thời gian
         /// </summary>
         /// <param name="memberId">id thành viên</param>

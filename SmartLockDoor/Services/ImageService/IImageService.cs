@@ -3,6 +3,12 @@
     public interface IImageService
     {
         /// <summary>
+        /// Lấy thời gian của ảnh cũ nhất
+        /// </summary>
+        /// <returns>Thời gian ảnh cũ nhất</returns>
+        Task<DateTimeOffset?> GetOldestAsync();
+
+        /// <summary>
         /// Tìm ảnh theo id
         /// </summary>
         /// <param name="id">id ảnh</param>

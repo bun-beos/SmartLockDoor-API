@@ -1,4 +1,6 @@
-﻿namespace SmartLockDoor
+﻿using Newtonsoft.Json;
+
+namespace SmartLockDoor
 {
     public class ExceptionMiddleware
     {
