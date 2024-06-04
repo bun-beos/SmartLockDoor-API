@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.CodeDom;
 
 namespace SmartLockDoor.Controllers
@@ -9,10 +10,12 @@ namespace SmartLockDoor.Controllers
     public class MembersController : ControllerBase
     {
         private readonly IMemberService _memberService;
+        private readonly IFirebaseService _firebaseService;
 
-        public MembersController(IMemberService memberService)
+        public MembersController(IMemberService memberService, IFirebaseService firebaseService)
         {
             _memberService = memberService;
+            _firebaseService = firebaseService;
         }
 
         /// <summary>
@@ -20,7 +23,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
         [HttpGet]
-        [Authorize(Roles = nameof(RolesEnum.User))]
+        //[Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<List<MemberEntity>> GetAllAsync()
         {
             var result = await _memberService.GetAllAsync();
@@ -51,17 +54,18 @@ namespace SmartLockDoor.Controllers
         [HttpPost]
         [Route("NewMember")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<int> InsertMemberAsync(MemberEntityDto memberEntityDto)
+        public async Task<MemberEntity?> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
-            var memberEntity = await _memberService.FindByNameAsync(memberEntityDto.MemberName);
+            var memberEntity = await _memberService.FindByNameAsync(null, memberEntityDto.MemberName);
 
             if (memberEntity != null)
             {
                 throw new ConflictException($"Trùng tên thành viên '{memberEntityDto.MemberName}'.", "Tên thành viên đã tồn tại.");
-            } else {
-            var result = await _memberService.InsertAsync(memberEntityDto);
+            } else
+            {
+                var result = await _memberService.InsertAsync(memberEntityDto);
 
-            return result;
+                return result;
             }
         }
 
@@ -73,7 +77,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPut]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<int> UpdateMemberAsync(Guid memberId, MemberEntityDto memberEntityDto)
+        public async Task<MemberEntity?> UpdateMemberAsync(Guid memberId, MemberEntityDto memberEntityDto)
         {
             var result = await _memberService.UpdateAsync(memberId, memberEntityDto);
 

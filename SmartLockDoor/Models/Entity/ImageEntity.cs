@@ -10,6 +10,8 @@
 
         public string CreatedBy { get; set; } = string.Empty;
 
+        public Guid? NotifId { get; set; }
+
         public Guid MemberId { get; set; }
 
         public string MemberName { get; set; } = string.Empty;

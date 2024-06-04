@@ -20,7 +20,7 @@
         /// </summary>
         /// <param name="name">tên thành viên</param>
         /// <returns>Thông tin thành viên hoặc null</returns>
-        Task<MemberEntity?> FindByNameAsync(string name);
+        Task<MemberEntity?> FindByNameAsync(Guid? id, string name);
 
         /// <summary>
         /// Lấy thành viên theo id
@@ -34,7 +34,7 @@
         /// </summary>
         /// <param name="memberEntityDto">Thông tin thành viên thêm mới</param>
         /// <returns>Số lượng thành viên đã được thêm(1/0)</returns>
-        Task<int> InsertAsync(MemberEntityDto memberEntityDto);
+        Task<MemberEntity?> InsertAsync(MemberEntityDto memberEntityDto);
 
         /// <summary>
         /// Cập nhập thông tin thành viên 
@@ -42,7 +42,7 @@
         /// <param name="memberId">Id thành viên</param>
         /// <param name="memberEntityDto">Thông tin thành viên</param>
         /// <returns>Số lượng thành viên thay đổi</returns>
-        Task<int> UpdateAsync(Guid memberId, MemberEntityDto memberEntityDto);
+        Task<MemberEntity?> UpdateAsync(Guid memberId, MemberEntityDto memberEntityDto);
 
         /// <summary>
         /// Xóa thành viên theo id

@@ -80,7 +80,7 @@ namespace SmartLockDoor
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception("Lỗi khi xóa ảnh trên firebase");
             }
         }
 

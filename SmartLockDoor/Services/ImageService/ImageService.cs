@@ -35,6 +35,18 @@ namespace SmartLockDoor
             return result;
         }
 
+        public async Task<ImageEntity?> FindByNotifIdAsync(Guid notifId)
+        {
+            var param = new
+            {
+                p_Notifid = notifId
+            };
+
+            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<ImageEntity>("Proc_Image_GetByNotifId", param, commandType: CommandType.StoredProcedure);
+
+            return result;
+        }
+        
         public async Task<List<ImageEntity>> FilterAsync(Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
             var param = new
@@ -65,8 +77,9 @@ namespace SmartLockDoor
                 p_ImageId = Guid.NewGuid(),
                 p_MemberId = imageEntityDto.MemberId,
                 p_ImageLink = imageEntityDto.ImageData,
-                p_CreatedDate = DateTime.Now,
-                p_CreatedBy = "CX01"
+                p_CreatedDate = imageEntityDto.CreatedDate,
+                p_CreatedBy = "CX01",
+                p_NotifId = imageEntityDto.NotifId
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Image_Insert", param, commandType: CommandType.StoredProcedure);

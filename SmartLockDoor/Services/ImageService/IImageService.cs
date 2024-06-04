@@ -15,6 +15,8 @@
         /// <returns>Thông tin ảnh</returns>
         Task<ImageEntity?> FindByIdAsync(Guid id);
 
+        Task<ImageEntity?> FindByNotifIdAsync(Guid notifId);
+
         /// <summary>
         /// Lọc lịch sử ảnh theo id thành viên hoặc thời gian
         /// </summary>

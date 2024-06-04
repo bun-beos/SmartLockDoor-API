@@ -71,7 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
         };
     });
-    //.AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+//.AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -82,6 +82,7 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 

@@ -146,7 +146,7 @@ namespace SmartLockDoor.Controllers
 
             if (!_accountService.VerifyPasswordHash(accountEntityDto.Password, accountEntity.PasswordHash, accountEntity.PasswordSalt))
             {
-                throw new BadRequestException("Mật khẩu không đúng.", "Mật khẩu không hợp lệ.");
+                throw new BadRequestException("Mật khẩu không hợp lệ.", "Mật khẩu không đúng.");
             }
 
             var accessToken = _accountService.CreateAccessToken(accountEntityDto.Email, nameof(RolesEnum.User));
@@ -249,8 +249,13 @@ namespace SmartLockDoor.Controllers
         public async Task<int> UpdateUserImageAsync([FromBody] string imageBase64Data)
         {
             var email = _userService.GetMyEmail();
+            var accountEntity = await _accountService.GetAccountAsync("Email", email);
 
             var imageUri = await _firebaseService.UploadImageAsync(FolderEnum.Account, imageBase64Data);
+            if (accountEntity != null)
+            {
+                await _firebaseService.DeleteImageAsync(accountEntity.UserImage);
+            }
 
             var result = await _accountService.UpdateUserInfoAsync(email, null, imageUri);
 
@@ -271,7 +276,7 @@ namespace SmartLockDoor.Controllers
 
             if (accountEntity != null && !_accountService.VerifyPasswordHash(passwordChange.CurrentPassword, accountEntity.PasswordHash, accountEntity.PasswordSalt))
             {
-                throw new BadHttpRequestException("Mật khẩu hiện tại không đúng.");
+                throw new BadRequestException("Mật khẩu hiện tại không đúng.", "Sai mật khẩu.");
             }
 
             _accountService.CreatePasswordHash(passwordChange.NewPassword, out byte[] passwordHash, out byte[] passwordSalt);

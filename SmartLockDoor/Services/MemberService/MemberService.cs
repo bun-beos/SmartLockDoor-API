@@ -30,19 +30,20 @@ namespace SmartLockDoor
                 p_MemberId = id,
             };
 
-            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity>("Proc_Member_GetById", param, commandType: CommandType.StoredProcedure);
+            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity?>("Proc_Member_GetById", param, commandType: CommandType.StoredProcedure);
 
             return result;
         }
-        
-        public async Task<MemberEntity?> FindByNameAsync(string name)
+
+        public async Task<MemberEntity?> FindByNameAsync(Guid? id, string name)
         {
             var param = new
             {
+                p_MemberId = id,
                 p_MemberName = name,
             };
 
-            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity>("Proc_Member_GetByName", param, commandType: CommandType.StoredProcedure);
+            var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity?>("Proc_Member_GetByName", param, commandType: CommandType.StoredProcedure);
 
             return result;
         }
@@ -54,14 +55,16 @@ namespace SmartLockDoor
             return result ?? throw new NotFoundException($"Không tìm thấy thành viên có id = '{id}'.", "Không tìm thấy dữ liệu thành viên.");
         }
 
-        public async Task<int> InsertAsync(MemberEntityDto memberEntityDto)
+        public async Task<MemberEntity?> InsertAsync(MemberEntityDto memberEntityDto)
         {
             memberEntityDto.MemberPhoto = await _firebaseService.UploadImageAsync(FolderEnum.Member, memberEntityDto.MemberPhoto) ?? "";
-                                    var param = new
+            var param = new
             {
                 p_MemberId = Guid.NewGuid(),
                 p_MemberName = memberEntityDto.MemberName,
                 p_MemberPhoto = memberEntityDto.MemberPhoto,
+                p_DateOfBirth = memberEntityDto.DateOfBirth,
+                p_PhoneNumber = memberEntityDto.PhoneNumber,
                 p_CreatedDate = DateTime.Now,
                 p_CreatedBy = _userService.GetMyEmail(),
                 p_ModifiedDate = DateTime.Now,
@@ -70,21 +73,33 @@ namespace SmartLockDoor
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Member_Insert", param, commandType: CommandType.StoredProcedure);
 
-            return result;
+            if (result == 1)
+            {
+                return await FindByIdAsync(param.p_MemberId);
+            }
+            else return null;
         }
 
-        public async Task<int> UpdateAsync(Guid memberId, MemberEntityDto memberEntityDto)
+        public async Task<MemberEntity?> UpdateAsync(Guid memberId, MemberEntityDto memberEntityDto)
         {
             var memberEntity = await FindByIdAsync(memberId) ?? throw new NotFoundException($"Không tìm thấy thành viên có id = '{memberId}'.", "Không tìm thấy dữ liệu thành viên.");
+
+            var memberExist = await FindByNameAsync(memberId, memberEntityDto.MemberName);
+
+            if (memberExist != null)
+            {
+                throw new ConflictException($"Trùng tên thành viên: {memberEntityDto.MemberName}.", "Tên thành viên đã tồn tại.");
+            }
 
             if (memberEntityDto.MemberPhoto != string.Empty)
             {
                 memberEntityDto.MemberPhoto = await _firebaseService.UploadImageAsync(FolderEnum.Member, memberEntityDto.MemberPhoto) ?? "";
 
                 await _firebaseService.DeleteImageAsync(memberEntity.MemberPhoto);
-            } else
+            }
+            else
             {
-                 memberEntityDto.MemberPhoto = memberEntity.MemberPhoto;
+                memberEntityDto.MemberPhoto = memberEntity.MemberPhoto;
             }
 
             var param = new
@@ -92,13 +107,19 @@ namespace SmartLockDoor
                 p_MemberId = memberId,
                 p_MemberName = memberEntityDto.MemberName,
                 p_MemberPhoto = memberEntityDto.MemberPhoto,
+                p_DateOfBirth = memberEntityDto.DateOfBirth,
+                p_PhoneNumber = memberEntityDto.PhoneNumber,
                 p_ModifiedDate = DateTime.Now,
                 p_ModifiedBy = _userService.GetMyEmail()
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Member_Update", param, commandType: CommandType.StoredProcedure);
 
-            return result;
+            if (result == 1)
+            {
+                return await FindByIdAsync(memberId);
+            }
+            else return null;
         }
 
         public async Task<int> DeleteAsync(Guid memberId)
