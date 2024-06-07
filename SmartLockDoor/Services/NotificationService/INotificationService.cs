@@ -2,7 +2,7 @@
 {
     public interface INotificationService
     {
-        Task<List<NotificationEntity>> GetAllAsync();
+        Task<List<NotificationEntity>> GetAllByDeviceAsync(Guid deviceId);
 
         Task<int> InsertAsync(NotificationEntity entity);
 

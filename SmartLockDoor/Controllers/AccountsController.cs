@@ -160,7 +160,7 @@ namespace SmartLockDoor.Controllers
                 RefreshTokenExpires = newRefreshToken.Expires
             };
 
-            var result = await _accountService.UpdateTokenAsync(accountEntityDto.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
+            var result = await _accountService.UpdateTokenAsync(accountEntityDto.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken", accountEntityDto.PhoneToken);
 
             if (result == 1)
             {
@@ -178,7 +178,7 @@ namespace SmartLockDoor.Controllers
         {
             var accountEntity = await _accountService.GetAccountAsync("Email", email);
 
-            if(accountEntity == null)
+            if (accountEntity == null)
             {
                 throw new BadRequestException($"Không tìm thấy email: '{email}'.", "Email chưa đăng ký tài khoản.");
             }
@@ -190,7 +190,7 @@ namespace SmartLockDoor.Controllers
 
             var resetPasswordToken = _accountService.CreatePasswordResetToken();
 
-            var result = await _accountService.UpdateTokenAsync(email, resetPasswordToken.Token, resetPasswordToken.Expires, "PasswordToken");
+            var result = await _accountService.UpdateTokenAsync(email, resetPasswordToken.Token, resetPasswordToken.Expires, "PasswordToken", "");
 
             var emailDto = new EmailDto
             {
@@ -319,7 +319,7 @@ namespace SmartLockDoor.Controllers
                 RefreshTokenExpires = newRefreshToken.Expires
             };
 
-            var result = await _accountService.UpdateTokenAsync(accountEntity.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken");
+            var result = await _accountService.UpdateTokenAsync(accountEntity.Email, newRefreshToken.Token, newRefreshToken.Expires, "RefreshToken", accountEntity.PhoneToken);
 
             if (result == 1)
             {

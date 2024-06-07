@@ -6,7 +6,7 @@
         /// Lấy thời gian của ảnh cũ nhất
         /// </summary>
         /// <returns>Thời gian ảnh cũ nhất</returns>
-        Task<DateTimeOffset?> GetOldestAsync();
+        Task<DateTimeOffset?> GetOldestAsync(Guid deviceId);
 
         /// <summary>
         /// Tìm ảnh theo id
@@ -24,7 +24,7 @@
         /// <param name="startDate">Ngày bắt đầu</param>
         /// <param name="endDate">Ngày kết thúc</param>
         /// <returns></returns>
-        Task<List<ImageEntity>> FilterAsync(Guid? memberId, DateTime? startDate, DateTime? endDate);
+        Task<List<ImageEntity>> FilterAsync(Guid deviceId, Guid? memberId, DateTime? startDate, DateTime? endDate);
 
         /// <summary>
         /// Thêm ảnh mới

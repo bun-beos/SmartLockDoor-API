@@ -13,9 +13,14 @@ namespace SmartLockDoor
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<NotificationEntity>> GetAllAsync()
+        public async Task<List<NotificationEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
-            var result = await _unitOfWork.Connection.QueryAsync<NotificationEntity>("Proc_Notification_GetAll", commandType: CommandType.StoredProcedure);
+            var param = new
+            {
+                p_DeviceId = deviceId
+            };
+
+            var result = await _unitOfWork.Connection.QueryAsync<NotificationEntity>("Proc_Notification_GetAllByDevice", param, commandType: CommandType.StoredProcedure);
 
             return result.ToList();
         }
@@ -25,6 +30,7 @@ namespace SmartLockDoor
             var param = new
             {
                 p_NotifId = notificationEntity.NotifId,
+                p_DeviceId = notificationEntity.DeviceId,
                 p_NotifTitle = notificationEntity.NotifTitle,
                 p_NotifBody = notificationEntity.NotifBody,
                 p_Createddate = notificationEntity.CreatedDate

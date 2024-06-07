@@ -16,9 +16,14 @@ namespace SmartLockDoor
             _memberService = memberService;
         }
 
-        public async Task<DateTimeOffset?> GetOldestAsync()
+        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
         {
-            var imageEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<ImageEntity>("Proc_Image_GetOldest", commandType: CommandType.StoredProcedure);
+            var param = new
+            {
+                p_DeviceId = deviceId
+            };
+
+            var imageEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<ImageEntity>("Proc_Image_GetOldest", param, commandType: CommandType.StoredProcedure);
 
             return imageEntity?.CreatedDate;
         }
@@ -47,10 +52,11 @@ namespace SmartLockDoor
             return result;
         }
         
-        public async Task<List<ImageEntity>> FilterAsync(Guid? memberId, DateTime? startDate, DateTime? endDate)
+        public async Task<List<ImageEntity>> FilterAsync(Guid deviceId, Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
             var param = new
             {
+                p_DeviceId = deviceId,
                 p_MemberId = memberId,
                 p_StartDate = startDate,
                 p_EndDate = endDate
@@ -76,6 +82,7 @@ namespace SmartLockDoor
             {
                 p_ImageId = Guid.NewGuid(),
                 p_MemberId = imageEntityDto.MemberId,
+                p_DeviceId = imageEntityDto.DeviceId,
                 p_ImageLink = imageEntityDto.ImageData,
                 p_CreatedDate = imageEntityDto.CreatedDate,
                 p_CreatedBy = "CX01",

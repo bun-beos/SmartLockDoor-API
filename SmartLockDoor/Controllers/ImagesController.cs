@@ -21,11 +21,11 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Thời gian của ảnh cũ nhất</returns>
         [HttpGet]
-        [Route("OldestTime")]
+        [Route("OldestTime/{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<DateTimeOffset?> GetOldestAsync()
+        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
         {
-            var result = await _imageService.GetOldestAsync();
+            var result = await _imageService.GetOldestAsync(deviceId);
 
             return result;
         }
@@ -38,10 +38,11 @@ namespace SmartLockDoor.Controllers
         /// <param name="endDate">ngày kết thúc</param>
         /// <returns>Danh sách ảnh</returns>
         [HttpGet]
+        [Route("{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<List<ImageEntity>> FilterImageAsync(Guid? memberId, DateTime? startDate, DateTime? endDate)
+        public async Task<List<ImageEntity>> FilterImageAsync(Guid deviceId, Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
-            var result = await _imageService.FilterAsync(memberId, startDate, endDate);
+            var result = await _imageService.FilterAsync(deviceId, memberId, startDate, endDate);
 
             return result.ToList();
         }

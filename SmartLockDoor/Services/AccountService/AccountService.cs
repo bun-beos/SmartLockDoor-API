@@ -67,7 +67,7 @@ namespace SmartLockDoor
             else return string.Empty;
         }
 
-        public async Task<int> UpdateTokenAsync(string email, string token, DateTime tokenExpires, string tokenType)
+        public async Task<int> UpdateTokenAsync(string email, string token, DateTime tokenExpires, string tokenType, string phoneToken)
         {
             var param = new
             {
@@ -75,7 +75,8 @@ namespace SmartLockDoor
                 p_Token = token,
                 p_TokenExpires = tokenExpires,
                 p_TokenType = tokenType,
-                p_ModifiedDate = DateTime.Now
+                p_ModifiedDate = DateTime.Now,
+                p_PhoneToken = phoneToken
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateToken", param, commandType: CommandType.StoredProcedure);

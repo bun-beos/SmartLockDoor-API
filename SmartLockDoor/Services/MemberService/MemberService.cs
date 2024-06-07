@@ -16,9 +16,14 @@ namespace SmartLockDoor
             _firebaseService = firebaseService;
         }
 
-        public async Task<List<MemberEntity>> GetAllAsync()
+        public async Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
-            var result = await _unitOfWork.Connection.QueryAsync<MemberEntity>("Proc_Member_GetAll", commandType: CommandType.StoredProcedure);
+            var param = new
+            {
+                p_DeviceId = deviceId,
+            };
+
+            var result = await _unitOfWork.Connection.QueryAsync<MemberEntity>("Proc_Member_GetAll", param, commandType: CommandType.StoredProcedure);
 
             return result.ToList();
         }
@@ -61,6 +66,7 @@ namespace SmartLockDoor
             var param = new
             {
                 p_MemberId = Guid.NewGuid(),
+                p_DeviceId = memberEntityDto.DeviceId,
                 p_MemberName = memberEntityDto.MemberName,
                 p_MemberPhoto = memberEntityDto.MemberPhoto,
                 p_DateOfBirth = memberEntityDto.DateOfBirth,
@@ -84,12 +90,12 @@ namespace SmartLockDoor
         {
             var memberEntity = await FindByIdAsync(memberId) ?? throw new NotFoundException($"Không tìm thấy thành viên có id = '{memberId}'.", "Không tìm thấy dữ liệu thành viên.");
 
-            var memberExist = await FindByNameAsync(memberId, memberEntityDto.MemberName);
+            //var memberExist = await FindByNameAsync(memberId, memberEntityDto.MemberName);
 
-            if (memberExist != null)
-            {
-                throw new ConflictException($"Trùng tên thành viên: {memberEntityDto.MemberName}.", "Tên thành viên đã tồn tại.");
-            }
+            //if (memberExist != null)
+            //{
+            //    throw new ConflictException($"Trùng tên thành viên: {memberEntityDto.MemberName}.", "Tên thành viên đã tồn tại.");
+            //}
 
             if (memberEntityDto.MemberPhoto != string.Empty)
             {

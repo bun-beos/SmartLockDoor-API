@@ -45,7 +45,7 @@
         /// <param name="tokenExpires">Thời hạn</param>
         /// <param name="tokenType">Loại token</param>
         /// <returns>1-Thành công, 0-Thất bại</returns>
-        Task<int> UpdateTokenAsync(string email, string token, DateTime tokenExpires, string tokenType);
+        Task<int> UpdateTokenAsync(string email, string token, DateTime tokenExpires, string tokenType, string phoneToken);
 
         /// <summary>
         /// Cập nhập Username hoặc UserImage

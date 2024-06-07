@@ -31,6 +31,8 @@ namespace SmartLockDoor
 
         public DateTimeOffset? PasswordTokenExpires { get; set; }
 
+        public string? PhoneToken { get; set; }
+
         public DateTimeOffset? ModifiedDate { get; set; }
     }
 }

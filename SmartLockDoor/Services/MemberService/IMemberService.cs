@@ -6,7 +6,7 @@
         /// Lấy tất cả thành viên
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
-        Task<List<MemberEntity>> GetAllAsync();
+        Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId);
 
         /// <summary>
         /// Tìm thành viên theo id

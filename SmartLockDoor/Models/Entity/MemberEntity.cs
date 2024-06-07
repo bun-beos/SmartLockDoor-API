@@ -7,6 +7,8 @@ namespace SmartLockDoor
     {
         public Guid MemberId { get; set; }
 
+        public Guid? DeviceId { get; set; }
+
         public string MemberName { get; set; } = string.Empty;
 
         public string MemberPhoto { get; set; } = string.Empty;

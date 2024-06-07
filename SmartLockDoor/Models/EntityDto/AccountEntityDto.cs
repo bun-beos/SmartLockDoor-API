@@ -11,5 +11,7 @@ namespace SmartLockDoor
         public string Password { get; set; } = string.Empty;
 
         public string? Username { get; set; }
+
+        public string? PhoneToken { get; set; }
     }
 }

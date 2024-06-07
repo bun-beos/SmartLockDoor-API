@@ -23,10 +23,11 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
         [HttpGet]
+        [Route("{deviceId}")]
         //[Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<List<MemberEntity>> GetAllAsync()
+        public async Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
-            var result = await _memberService.GetAllAsync();
+            var result = await _memberService.GetAllByDeviceAsync(deviceId);
 
             return result;
         }
@@ -53,20 +54,20 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPost]
         [Route("NewMember")]
-        [Authorize(Roles = nameof(RolesEnum.User))]
+        //[Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<MemberEntity?> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
-            var memberEntity = await _memberService.FindByNameAsync(null, memberEntityDto.MemberName);
+            //var memberEntity = await _memberService.FindByNameAsync(null, memberEntityDto.MemberName);
 
-            if (memberEntity != null)
-            {
-                throw new ConflictException($"Trùng tên thành viên '{memberEntityDto.MemberName}'.", "Tên thành viên đã tồn tại.");
-            } else
-            {
+            //if (memberEntity != null)
+            //{
+            //    throw new ConflictException($"Trùng tên thành viên '{memberEntityDto.MemberName}'.", "Tên thành viên đã tồn tại.");
+            //} else
+            //{
                 var result = await _memberService.InsertAsync(memberEntityDto);
 
                 return result;
-            }
+            //}
         }
 
         /// <summary>
