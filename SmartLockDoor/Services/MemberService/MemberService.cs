@@ -23,7 +23,7 @@ namespace SmartLockDoor
                 p_DeviceId = deviceId,
             };
 
-            var result = await _unitOfWork.Connection.QueryAsync<MemberEntity>("Proc_Member_GetAll", param, commandType: CommandType.StoredProcedure);
+            var result = await _unitOfWork.Connection.QueryAsync<MemberEntity>("Proc_Member_GetAllByDevice", param, commandType: CommandType.StoredProcedure);
 
             return result.ToList();
         }

@@ -17,7 +17,7 @@ namespace SmartLockDoor.Controllers
         [HttpGet]
         [Route("{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<List<NotificationEntity>> GetAllAsync(Guid deviceId)
+        public async Task<List<NotificationEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
             return await _notificationService.GetAllByDeviceAsync(deviceId);
         }

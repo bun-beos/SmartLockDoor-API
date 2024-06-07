@@ -42,6 +42,7 @@ namespace SmartLockDoor.Controllers
         }
 
         [HttpDelete]
+        [Route("{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<int> DeleteAsync(Guid deviceId)
         {

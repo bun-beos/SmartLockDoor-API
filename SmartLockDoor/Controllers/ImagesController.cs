@@ -47,12 +47,17 @@ namespace SmartLockDoor.Controllers
             return result.ToList();
         }
 
+        /// <summary>
+        /// Lấy ảnh theo id thông báo
+        /// </summary>
+        /// <param name="notifId">Id thông báo</param>
+        /// <returns>Thông tin ảnh</returns>
         [HttpGet]
-        [Route("{id}")]
+        [Route("{notifId}")]
         [Authorize(Roles =nameof(RolesEnum.User))]
-        public async Task<ImageEntity?> GetByNotifIdAsync(Guid id)
+        public async Task<ImageEntity?> GetByNotifIdAsync(Guid notifId)
         {
-            return await _imageService.FindByNotifIdAsync(id);
+            return await _imageService.FindByNotifIdAsync(notifId);
         }
 
         /// <summary>
