@@ -23,7 +23,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
         [HttpGet]
-        //[Authorize(Roles = nameof(RolesEnum.User))]
+        [Authorize(Roles = nameof(RolesEnum.Admin))]
         public async Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
             var result = await _memberService.GetAllByDeviceAsync(deviceId);
@@ -53,7 +53,7 @@ namespace SmartLockDoor.Controllers
         /// <returns>Số bản ghi thay đổi</returns>
         [HttpPost]
         [Route("NewMember")]
-        //[Authorize(Roles = nameof(RolesEnum.User))]
+        [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<MemberEntity?> InsertMemberAsync(MemberEntityDto memberEntityDto)
         {
             //var memberEntity = await _memberService.FindByNameAsync(null, memberEntityDto.MemberName);

@@ -4,7 +4,7 @@
     {
         public Guid DeviceId { get; set; }
 
-        public Guid AccountId { get; set; }
+        public Guid? AccountId { get; set; }
 
         public string DeviceName { get; set; } = string.Empty;
 

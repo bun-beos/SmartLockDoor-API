@@ -6,7 +6,7 @@
         /// Lấy thời gian của ảnh cũ nhất
         /// </summary>
         /// <returns>Thời gian ảnh cũ nhất</returns>
-        Task<DateTimeOffset?> GetOldestAsync(Guid deviceId);
+        Task<DateTimeOffset> GetOldestAsync(Guid deviceId);
 
         /// <summary>
         /// Tìm ảnh theo id

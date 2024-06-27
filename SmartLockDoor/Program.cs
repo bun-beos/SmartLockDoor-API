@@ -85,6 +85,8 @@ builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
+builder.Services.AddSingleton<MQTTService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -94,6 +96,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.UseCors("corsapp");
 }
+
+//var basePath = AppContext.BaseDirectory;
+//var relativePath = Path.Combine(basePath, "../../CA/emqxsl-ca.crt");
+//var path = Path.GetFullPath(relativePath);
+
+//Console.WriteLine(File.Exists(path));
+//Console.WriteLine(Guid.NewGuid());
 
 app.UseHttpsRedirection();
 

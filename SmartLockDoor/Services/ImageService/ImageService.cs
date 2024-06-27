@@ -16,7 +16,7 @@ namespace SmartLockDoor
             _memberService = memberService;
         }
 
-        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
+        public async Task<DateTimeOffset> GetOldestAsync(Guid deviceId)
         {
             var param = new
             {
@@ -25,7 +25,13 @@ namespace SmartLockDoor
 
             var imageEntity = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<ImageEntity>("Proc_Image_GetOldest", param, commandType: CommandType.StoredProcedure);
 
-            return imageEntity?.CreatedDate;
+            if (imageEntity == null)
+            {
+                return DateTimeOffset.Now;
+            } else
+            {
+                return imageEntity.CreatedDate;
+            }
         }
 
         public async Task<ImageEntity?> FindByIdAsync(Guid id)

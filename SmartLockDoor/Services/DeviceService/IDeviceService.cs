@@ -2,7 +2,7 @@
 {
     public interface IDeviceService
     {
-        public Task<List<DeviceEntity>> GetAllAsync();
+        public Task<List<DeviceEntity>> GetAllAsync(Guid accountId);
 
         public Task<List<DeviceEntity>> GetByAccountAsync(Guid accountId);
 

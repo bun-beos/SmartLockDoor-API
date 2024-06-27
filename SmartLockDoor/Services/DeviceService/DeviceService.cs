@@ -12,9 +12,14 @@ namespace SmartLockDoor
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<DeviceEntity>> GetAllAsync()
+        public async Task<List<DeviceEntity>> GetAllAsync(Guid accountId)
         {
-            var result =  await _unitOfWork.Connection.QueryAsync<DeviceEntity>("Proc_Device_GetAll", commandType: CommandType.StoredProcedure);
+            var param = new
+            {
+                p_AccountId = accountId
+            };
+
+            var result =  await _unitOfWork.Connection.QueryAsync<DeviceEntity>("Proc_Device_GetAll", param, commandType: CommandType.StoredProcedure);
 
             return result.ToList();
         }

@@ -23,7 +23,7 @@ namespace SmartLockDoor.Controllers
         [HttpGet]
         [Route("OldestTime/{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
+        public async Task<DateTimeOffset> GetOldestAsync(Guid deviceId)
         {
             var result = await _imageService.GetOldestAsync(deviceId);
 
@@ -38,7 +38,7 @@ namespace SmartLockDoor.Controllers
         /// <param name="endDate">ngày kết thúc</param>
         /// <returns>Danh sách ảnh</returns>
         [HttpGet]
-        [Route("{deviceId}")]
+        [Route("Filter")]
         [Authorize(Roles = nameof(RolesEnum.User))]
         public async Task<List<ImageEntity>> FilterImageAsync(Guid deviceId, Guid? memberId, DateTime? startDate, DateTime? endDate)
         {
