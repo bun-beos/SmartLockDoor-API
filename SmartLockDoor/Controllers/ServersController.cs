@@ -10,7 +10,7 @@ namespace SmartLockDoor.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok($"Server is running! Time {DateTime.Now}");
+            return Ok($"Server is running! Time {DateTime.UtcNow.ToLocalTime()}");
         }
     }
 }
