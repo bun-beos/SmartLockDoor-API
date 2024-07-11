@@ -86,6 +86,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
 builder.Services.AddSingleton<MQTTService>();
+builder.Services.AddSingleton<TimeService>();
 
 var app = builder.Build();
 

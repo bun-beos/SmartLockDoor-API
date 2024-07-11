@@ -7,10 +7,16 @@ namespace SmartLockDoor.Controllers
     [ApiController]
     public class ServersController : ControllerBase
     {
+        private readonly TimeService _timeService;
+        public ServersController(TimeService timeService)
+        {
+            _timeService = timeService;
+        }
+
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok($"Server is running! Time {DateTime.UtcNow.ToLocalTime()}");
+            return Ok($"Server is running! Time {_timeService.GetLocalTime()}");
         }
     }
 }
