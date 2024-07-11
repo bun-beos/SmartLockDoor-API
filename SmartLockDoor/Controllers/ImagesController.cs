@@ -23,7 +23,7 @@ namespace SmartLockDoor.Controllers
         [HttpGet]
         [Route("OldestTime/{deviceId}")]
         [Authorize(Roles = nameof(RolesEnum.User))]
-        public async Task<DateTimeOffset> GetOldestAsync(Guid deviceId)
+        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
         {
             var result = await _imageService.GetOldestAsync(deviceId);
 

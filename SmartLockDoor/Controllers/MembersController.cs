@@ -23,7 +23,7 @@ namespace SmartLockDoor.Controllers
         /// </summary>
         /// <returns>Danh sách thành viên</returns>
         [HttpGet]
-        [Authorize(Roles = nameof(RolesEnum.Admin))]
+        //[Authorize(Roles = nameof(RolesEnum.Admin))]
         public async Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId)
         {
             var result = await _memberService.GetAllByDeviceAsync(deviceId);

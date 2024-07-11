@@ -16,7 +16,7 @@ namespace SmartLockDoor
             _memberService = memberService;
         }
 
-        public async Task<DateTimeOffset> GetOldestAsync(Guid deviceId)
+        public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
         {
             var param = new
             {
@@ -27,7 +27,7 @@ namespace SmartLockDoor
 
             if (imageEntity == null)
             {
-                return DateTimeOffset.Now;
+                return DateTimeOffset.Now.AddMonths(1);
             } else
             {
                 return imageEntity.CreatedDate;

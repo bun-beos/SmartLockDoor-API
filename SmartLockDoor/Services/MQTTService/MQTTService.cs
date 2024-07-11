@@ -25,47 +25,53 @@ namespace SmartLockDoor
             var password = _configuration.GetSection("MQTT:Password").Value;
             var clientId = _configuration.GetSection("MQTT:ClientId").Value;
 
-            var basePath = AppContext.BaseDirectory;
-            var relativePath = Path.Combine(basePath, "../../CA/emqxsl-ca.crt");
-            var caPath = Path.GetFullPath(relativePath);
-
-
             var options = new MqttClientOptionsBuilder()
             .WithTcpServer(broker, port)
             .WithCredentials(username, password)
             .WithClientId(clientId)
             .WithCleanSession()
-            .WithTlsOptions(o =>
-            {
-                o.WithCertificateValidationHandler(_ => true);
-
-                o.WithSslProtocols(SslProtocols.Tls12);
-
-                var certificate = new X509Certificate2(caPath, "");
-                o.WithClientCertificates(new List<X509Certificate2> { certificate });
-
-            })
             .Build();
 
             _mqttClient.ConnectAsync(options, CancellationToken.None).Wait();
         }
 
-        public async Task<MqttClientPublishResult?> PublishMessageAsync(string topic, string payload)
+        public async Task<MqttClientPublishResult?> PublishMessageAsync(MqttPublishRequest mqttPublishRequest)
         {
             var message = new MqttApplicationMessageBuilder()
-                    .WithTopic(topic)
-                    .WithPayload(payload)
-                    .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
+                    .WithTopic(mqttPublishRequest.Topic)
+                    .WithPayload(mqttPublishRequest.Payload)
+                    .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.ExactlyOnce)
                     .WithRetainFlag()
-            .Build();
+                    .Build();
 
             if (_mqttClient.IsConnected)
             {
                 return await _mqttClient.PublishAsync(message);
-            } else
+            }
+            else
             {
                 return null;
             }
+        }
+
+        public async Task<Boolean> PublishManyAsync(List<MqttPublishRequest> mqttPublishRequests)
+        {
+            foreach (var mqttPublishRequest in mqttPublishRequests)
+            {
+                var message = new MqttApplicationMessageBuilder()
+                    .WithTopic(mqttPublishRequest.Topic)
+                    .WithPayload(mqttPublishRequest.Payload)
+                    .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.ExactlyOnce)
+                    .WithRetainFlag()
+                    .Build();
+
+                await _mqttClient.PublishAsync(message);
+            }
+            if (_mqttClient.IsConnected)
+            {
+                return true;
+            }
+            else return false;
         }
     }
 }
