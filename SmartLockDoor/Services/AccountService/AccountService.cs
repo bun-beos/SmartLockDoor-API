@@ -57,7 +57,7 @@ namespace SmartLockDoor
                 p_PasswordSalt,
                 p_VerifyToken = newVerifyToken.Token,
                 p_VerifyTokenExpires = newVerifyToken.Expires,
-                p_ModifiedDate = DateTime.Now
+                p_ModifiedDate = _timeService.GetLocalTime()
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_Register", param, commandType: CommandType.StoredProcedure);
@@ -77,7 +77,7 @@ namespace SmartLockDoor
                 p_Token = token,
                 p_TokenExpires = tokenExpires,
                 p_TokenType = tokenType,
-                p_ModifiedDate = DateTime.Now,
+                p_ModifiedDate = _timeService.GetLocalTime(),
                 p_PhoneToken = phoneToken
             };
 
@@ -93,7 +93,7 @@ namespace SmartLockDoor
                 p_Email = email,
                 p_PasswordHash = passwordHash,
                 p_PasswordSalt = passwordSalt,
-                p_ModifiedDate = DateTime.Now
+                p_ModifiedDate = _timeService.GetLocalTime()
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdatePassword", param, commandType: CommandType.StoredProcedure);
@@ -114,7 +114,7 @@ namespace SmartLockDoor
                 p_PasswordSalt,
                 p_VerifyToken = newVerifyToken.Token,
                 p_VerifyTokenExpires = newVerifyToken.Expires,
-                p_ModifiedDate = DateTime.Now
+                p_ModifiedDate = _timeService.GetLocalTime()
             };
 
             await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateRegister", param, commandType: CommandType.StoredProcedure);
@@ -129,7 +129,7 @@ namespace SmartLockDoor
                 p_Email = email,
                 p_Username = username,
                 p_UserImage = userImage,
-                p_ModifiedDate = DateTime.Now
+                p_ModifiedDate = _timeService.GetLocalTime()
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateUserInfo", param, commandType: CommandType.StoredProcedure);
@@ -142,8 +142,8 @@ namespace SmartLockDoor
             var param = new
             {
                 p_Email = email,
-                p_VerifiedDate = DateTime.Now,
-                p_ModifiedDate = DateTime.Now,
+                p_VerifiedDate = _timeService.GetLocalTime(),
+                p_ModifiedDate = _timeService.GetLocalTime(),
             };
 
             var result = await _unitOfWork.Connection.ExecuteAsync("Proc_Account_UpdateVerified", param, commandType: CommandType.StoredProcedure);
@@ -198,7 +198,7 @@ namespace SmartLockDoor
             var verifyToken = new VerifyToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
-                Expires = DateTime.Now.AddHours(1),
+                Expires = _timeService.GetLocalTime().AddHours(1),
             };
 
             return verifyToken;
@@ -218,7 +218,7 @@ namespace SmartLockDoor
 
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(2),
+                expires: _timeService.GetLocalTime().AddMinutes(2),
                 signingCredentials: cred);
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
@@ -231,7 +231,7 @@ namespace SmartLockDoor
             var refreshToken = new RefreshToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(128)),
-                Expires = DateTime.Now.AddDays(7),
+                Expires = _timeService.GetLocalTime().AddDays(7),
             };
 
             return refreshToken;
@@ -242,7 +242,7 @@ namespace SmartLockDoor
             var verifyToken = new VerifyToken
             {
                 Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(4)),
-                Expires = DateTime.Now.AddMinutes(3),
+                Expires = _timeService.GetLocalTime().AddMinutes(3),
             };
 
             return verifyToken;

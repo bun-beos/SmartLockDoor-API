@@ -8,12 +8,14 @@ namespace SmartLockDoor
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFirebaseService _firebaseService;
         private readonly IMemberService _memberService;
+        private readonly TimeService _timeService;
 
-        public ImageService(IUnitOfWork unitOfWork, IFirebaseService firebaseService, IMemberService memberService)
+        public ImageService(IUnitOfWork unitOfWork, IFirebaseService firebaseService, IMemberService memberService, TimeService timeService)
         {
             _unitOfWork = unitOfWork;
             _firebaseService = firebaseService;
             _memberService = memberService;
+            _timeService = timeService;
         }
 
         public async Task<DateTimeOffset?> GetOldestAsync(Guid deviceId)
@@ -27,7 +29,7 @@ namespace SmartLockDoor
 
             if (imageEntity == null)
             {
-                return DateTimeOffset.Now.AddMonths(1);
+                return _timeService.GetLocalTimeOffset().AddMonths(1);
             } else
             {
                 return imageEntity.CreatedDate;

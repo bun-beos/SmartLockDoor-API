@@ -7,9 +7,12 @@ namespace SmartLockDoor
     public class DeviceService : IDeviceService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public DeviceService(IUnitOfWork unitOfWork)
+        private readonly TimeService _timeService;
+
+        public DeviceService(IUnitOfWork unitOfWork, TimeService timeService)
         {
             _unitOfWork = unitOfWork;
+            _timeService = timeService;
         }
 
         public async Task<List<DeviceEntity>> GetAllAsync(Guid accountId)
@@ -43,7 +46,7 @@ namespace SmartLockDoor
                 p_DeviceId = deviceEntity.DeviceId,
                 p_DeviceName = deviceEntity.DeviceName,
                 p_DeviceState = 1,
-                p_CreatedDate = DateTime.Now
+                p_CreatedDate = _timeService.GetLocalTime()
             };
 
             return await _unitOfWork.Connection.ExecuteAsync("Proc_Device_Insert", param, commandType: CommandType.StoredProcedure);

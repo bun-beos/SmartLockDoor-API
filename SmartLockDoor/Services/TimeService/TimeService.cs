@@ -4,14 +4,21 @@
     {
         public DateTime GetLocalTime()
         {
-            // Lấy thời gian hiện tại theo UTC
             DateTime utcTime = DateTime.UtcNow;
 
-            // Chuyển đổi UTC sang múi giờ địa phương (ví dụ UTC+7)
             TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             DateTime localTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, localTimeZone);
 
             return localTime;
+        }
+
+        public DateTimeOffset GetLocalTimeOffset()
+        {
+            DateTime utcTime = DateTime.UtcNow;
+
+            DateTimeOffset dateTimeOffset = new DateTimeOffset(utcTime, TimeSpan.Zero).ToOffset(TimeSpan.FromHours(7));
+
+            return dateTimeOffset;
         }
     }
 }

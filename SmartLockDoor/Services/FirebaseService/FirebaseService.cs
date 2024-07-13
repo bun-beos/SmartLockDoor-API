@@ -9,7 +9,13 @@ namespace SmartLockDoor
         private readonly string Email = "trungkienttmh@gmail.com";
         private readonly string Password = "Maihoa2302!";
         private readonly string Bucket = "smart-doorbell-ffebe.appspot.com";
-                
+        private readonly TimeService _timeService;
+
+        public FirebaseService(TimeService timeService)
+        {
+            _timeService = timeService;
+        }
+
         public async Task<string> UploadImageAsync(FolderEnum folderEnum, string imageBase64Data)
         {
             byte[] imageData = Convert.FromBase64String(imageBase64Data);
@@ -30,7 +36,7 @@ namespace SmartLockDoor
                 folderName = "History";
             } else
             {
-                folderName = DateTime.Now.ToString("dd-MM-yyyy");
+                folderName = _timeService.GetLocalTime().ToString("dd-MM-yyyy");
             }
 
             var cancellation = new CancellationTokenSource();
@@ -43,7 +49,7 @@ namespace SmartLockDoor
                 })
                 .Child("Smart Lock Door")
                 .Child(folderName)
-                .Child($"image_{DateTime.Now:ddMMyyy_HHmmss}.jpg")
+                .Child($"image_{_timeService.GetLocalTime():ddMMyyy_HHmmss}.jpg")
                 .PutAsync(stream, cancellation.Token);
             try
             {
