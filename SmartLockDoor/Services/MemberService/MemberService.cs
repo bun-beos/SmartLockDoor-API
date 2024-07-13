@@ -8,12 +8,14 @@ namespace SmartLockDoor
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
         private readonly IFirebaseService _firebaseService;
+        private readonly TimeService _timeService;
 
-        public MemberService(IUnitOfWork unitOfWork, IUserService userService, IFirebaseService firebaseService)
+        public MemberService(IUnitOfWork unitOfWork, IUserService userService, IFirebaseService firebaseService, TimeService timeService)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
             _firebaseService = firebaseService;
+            _timeService = timeService;
         }
 
         public async Task<List<MemberEntity>> GetAllByDeviceAsync(Guid deviceId)
@@ -71,9 +73,9 @@ namespace SmartLockDoor
                 p_MemberPhoto = memberEntityDto.MemberPhoto,
                 p_DateOfBirth = memberEntityDto.DateOfBirth,
                 p_PhoneNumber = memberEntityDto.PhoneNumber,
-                p_CreatedDate = DateTime.Now,
+                p_CreatedDate = _timeService.GetLocalTime(),
                 p_CreatedBy = _userService.GetMyEmail(),
-                p_ModifiedDate = DateTime.Now,
+                p_ModifiedDate = _timeService.GetLocalTime(),
                 p_ModifiedBy = _userService.GetMyEmail()
             };
 
@@ -115,7 +117,7 @@ namespace SmartLockDoor
                 p_MemberPhoto = memberEntityDto.MemberPhoto,
                 p_DateOfBirth = memberEntityDto.DateOfBirth,
                 p_PhoneNumber = memberEntityDto.PhoneNumber,
-                p_ModifiedDate = DateTime.Now,
+                p_ModifiedDate = _timeService.GetLocalTime(),
                 p_ModifiedBy = _userService.GetMyEmail()
             };
 

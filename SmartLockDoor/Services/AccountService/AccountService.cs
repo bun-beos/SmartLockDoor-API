@@ -14,11 +14,13 @@ namespace SmartLockDoor
     {
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly TimeService _timeService;
 
-        public AccountService(IConfiguration configuration, IUnitOfWork unitOfWork)
+        public AccountService(IConfiguration configuration, IUnitOfWork unitOfWork, TimeService timeService)
         {
             _configuration = configuration;
             _unitOfWork = unitOfWork;
+            _timeService = timeService;
         }
 
         public async Task<List<AccountEntity>> GetAllAsync()
