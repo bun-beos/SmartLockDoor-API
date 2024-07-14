@@ -38,7 +38,7 @@ namespace SmartLockDoor
             };
 
             var result = await _unitOfWork.Connection.QueryFirstOrDefaultAsync<MemberEntity?>("Proc_Member_GetById", param, commandType: CommandType.StoredProcedure);
-
+                        
             return result;
         }
 
