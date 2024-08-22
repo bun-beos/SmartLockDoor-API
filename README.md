@@ -1,4 +1,4 @@
-# Smart Lock Door API .NET framework
+# Smart Lock Door API .NET Core framework
 ## API dự án khóa cửa thông minh nhận diện khuôn mặt
 - Đăng ký, đăng nhập, phân quyền qua JWT
 - Thêm, sửa, xóa thông tin thành viên đăng ký khuôn mặt
