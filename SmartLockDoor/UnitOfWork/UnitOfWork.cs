@@ -11,7 +11,7 @@ namespace SmartLockDoor
 
         public UnitOfWork(IConfiguration configuration)
         {
-            _connectionString = configuration["ConnectionString"] + configuration["Pwd"] ?? "";
+            _connectionString = configuration["ConnectionString"] ?? "";
         }
 
         public DbConnection Connection => _connection ??= new MySqlConnection(_connectionString);
